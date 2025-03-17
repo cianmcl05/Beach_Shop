@@ -70,7 +70,7 @@ forgot_label.pack(anchor="w", padx=20, pady=5)
 # Dropdown for Store Selection
 store_label = tk.Label(login_frame, text="Select Store", font=("Arial", 12, "bold"), bg="#FFF4A3")
 store_label.pack(anchor="w", padx=20, pady=(10, 0))
-store_dropdown = ttk.Combobox(login_frame, values=["Store 1", "Store 2", "Store 3"], font=("Arial", 12))
+store_dropdown = ttk.Combobox(login_frame, values=["Store 1", "Store 2", "Store 3", "Store 4", "Store 5"], font=("Arial", 12))
 store_dropdown.pack(anchor="w", padx=20)
 store_dropdown.current(0)
 
