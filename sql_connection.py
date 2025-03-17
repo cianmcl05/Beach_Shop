@@ -24,7 +24,7 @@ def insert_user(first_name, last_name, phone, email, password, role):
             cursor = connection.cursor()
 
             # Hash password (use actual hashing in production)
-            hashed_password = password  # TODO: Use hashlib or bcrypt for real security
+            hashed_password = password  # fix
 
             query = """INSERT INTO Employee (Name, Phone, Email, role, password) 
                        VALUES (%s, %s, %s, %s, %s)"""
