@@ -1,44 +1,44 @@
-# Importing module
 import mysql.connector
 from mysql.connector import Error
 
-
-def run_query():
+def connect_db():
+    """Establish connection to MySQL database."""
     try:
-        # Connect to the database
         connection = mysql.connector.connect(
-            host="10.101.226.22",
-            user="beach",
-            password="beach",
+            host="localhost",
+            user="root",
+            password="cmac2005",
             database="surfshop"
         )
-
-        if connection.is_connected():
-            print("Connected to the database")
-
-            # Create a cursor to execute queries
-            cursor = connection.cursor()
-
-            # Example query: Retrieve all records from a table
-            query = "SHOW TABLES;"
-            cursor.execute(query)  # Run the query
-
-            # Fetch all results
-            results = cursor.fetchall()
-
-            # Print the results
-            for row in results:
-                print(row)
-
+        return connection
     except Error as e:
         print(f"Error: {e}")
+        return None
 
-    finally:
-        if 'connection' in locals() and connection.is_connected():
+
+def insert_user(first_name, last_name, phone, email, password, role):
+    """Insert a new user into the database."""
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+
+            # Hash password (use actual hashing in production)
+            hashed_password = password  # TODO: Use hashlib or bcrypt for real security
+
+            query = """INSERT INTO Employee (Name, Phone, Email, role, password) 
+                       VALUES (%s, %s, %s, %s, %s)"""
+            values = (f'{first_name} {last_name}', phone, email, role, hashed_password)
+
+            cursor.execute(query, values)
+            connection.commit()
+            print("User registered successfully!")
+
+        except Error as e:
+            print(f"Database error: {e}")
+        finally:
             cursor.close()
             connection.close()
-            print("Database connection closed.")
+    else:
+        print("fail")
 
-
-# Run the function
-run_query()
