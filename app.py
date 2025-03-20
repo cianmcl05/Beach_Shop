@@ -1,9 +1,11 @@
+# use this code to run app
 import tkinter as tk
 import screens.welcome
 import screens.login
 import screens.signup
 
 
+# main app class
 class BeachShopApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -11,7 +13,8 @@ class BeachShopApp(tk.Tk):
         self.geometry("500x450")
         self.configure(bg="#FFF4A3")
 
-        self.frames = {}  # Dictionary to store frames
+        # Dictionary to store frames
+        self.frames = {}
 
         # Initialize screens
         for F in (screens.welcome.WelcomeScreen, screens.login.LoginScreen, screens.signup.SignUpScreen):
@@ -19,13 +22,15 @@ class BeachShopApp(tk.Tk):
             self.frames[F] = frame
             frame.place(relwidth=1, relheight=1)
 
-        self.show_frame(screens.welcome.WelcomeScreen)  # Show welcome screen by default
+        # Show welcome screen by default
+        self.show_frame(screens.welcome.WelcomeScreen)
 
+    # brings specific screen to the front
     def show_frame(self, frame_class):
-        """Raise a given frame to the front."""
         frame = self.frames[frame_class]
         frame.tkraise()
 
 
+# runs the app
 app = BeachShopApp()
 app.mainloop()

@@ -1,9 +1,7 @@
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
-import mysql.connector
-from mysql.connector import Error
+from tkinter import ttk, messagebox
 import screens.welcome
+from sql_connection import connect_db  # Importing the database connection function
 
 
 class LoginScreen(tk.Frame):
@@ -12,8 +10,8 @@ class LoginScreen(tk.Frame):
 
         tk.Label(self, text="Welcome back", font=("Arial", 16, "bold"), bg="#FFF4A3", fg="black").pack(pady=10)
 
-        # Create Entry fields for EmpID and Password
-        self.empid_entry = self.create_label_entry("EmpID:")
+        # Create Entry fields for Email and Password
+        self.email_entry = self.create_label_entry("Email:")
         self.password_entry = self.create_label_entry("Password:", show="*")
 
         tk.Label(self, text="Forgot User/Password?", font=("Arial", 10, "italic"),
@@ -27,15 +25,15 @@ class LoginScreen(tk.Frame):
 
         self.create_buttons(master, screens.welcome.WelcomeScreen, "Login")
 
+# input fields
     def create_label_entry(self, text, show=""):
-        """Helper function to create a label and entry field."""
         tk.Label(self, text=text, font=("Arial", 12), bg="#FFF4A3").pack(anchor="w", padx=20)
         entry = tk.Entry(self, font=("Arial", 12), show=show)
         entry.pack(anchor="w", padx=20)
         return entry
 
+# back and confirm buttons
     def create_buttons(self, master, back_screen, confirm_text):
-        """Helper function to create Back and Confirm buttons."""
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack(pady=10)
 
@@ -46,50 +44,31 @@ class LoginScreen(tk.Frame):
         tk.Button(button_frame, text=confirm_text, font=("Arial", 12, "bold"), width=10, height=1,
                   bg="#EECFA3", fg="black", relief="ridge", command=self.login).pack(side="left", padx=10)
 
+    # used to identify user and log them in
     def login(self):
         empid = self.empid_entry.get()
         password = self.password_entry.get()
 
         if self.authenticate_user(empid, password):
-            # If authentication is successful, show the next screen (e.g., go to dashboard)
             messagebox.showinfo("Login Success", "Welcome back!")
-            # Here you can call the method to switch to the next screen
-            # For example: master.show_frame(DashboardScreen)
         else:
             messagebox.showerror("Login Failed", "Invalid EmpID or Password.")
 
-    def authenticate_user(self, empid, password):
-        """Authenticate user by checking the credentials in the MySQL database."""
-        try:
-            # Establish connection to the database
-            connection = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="cmac2005",
-                database="surfshop"
-            )
-
-            if connection.is_connected():
+    # checks if credentials are in the database
+    def authenticate_user(self, email, password):
+        connection = connect_db()
+        if connection:
+            try:
                 cursor = connection.cursor()
-
-                # Query to check if user exists with the entered EmpID and Password
                 query = "SELECT * FROM Employee WHERE Email = %s AND Password = %s"
-                cursor.execute(query, (empid, password))
-
-                result = cursor.fetchone()  # Fetch one record
-
-                if result:
-                    # If result is not None, the user is found
-                    return True
-                else:
-                    return False
-
-        except Error as e:
-            print(f"Error: {e}")
-            return False
-
-        finally:
-            if connection.is_connected():
+                cursor.execute(query, (email, password))
+                result = cursor.fetchone()
+                return result is not None
+            except Exception as e:
+                print(f"Database error: {e}")
+                return False
+            finally:
+                # prevents open connections
                 cursor.close()
                 connection.close()
-
+        return False  # Return False if connection fails

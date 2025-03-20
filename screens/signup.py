@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import screens.welcome
-import sql_connection  # Import your database functions
+import sql_connection
 
 
 class SignUpScreen(tk.Frame):
@@ -9,8 +9,8 @@ class SignUpScreen(tk.Frame):
         super().__init__(master, bg="#FFF4A3")
 
         tk.Label(self, text="Create Account", font=("Arial", 16, "bold"), bg="#FFF4A3", fg="black").pack(pady=10)
-
-        self.entries = {}  # Store user inputs
+        # Store user inputs
+        self.entries = {}
 
         role_frame = tk.Frame(self, bg="#FFF4A3")
         role_frame.pack(anchor="w", padx=20, pady=5)
@@ -34,8 +34,8 @@ class SignUpScreen(tk.Frame):
 
         self.create_buttons(master, screens.welcome.WelcomeScreen, "Sign Up")
 
+    # create input fields
     def create_label_entry(self, label_text, show=""):
-        """Create labeled entry fields."""
         frame = tk.Frame(self, bg="#FFF4A3")
         frame.pack(anchor="w", padx=20, pady=2)
 
@@ -44,8 +44,8 @@ class SignUpScreen(tk.Frame):
         entry.pack(side="left", padx=10)
         self.entries[label_text] = entry  # Store entry field reference
 
+    # back and sign up buttons
     def create_buttons(self, master, back_screen, confirm_text):
-        """Create Back and Sign Up buttons."""
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack(pady=10)
 
@@ -57,6 +57,7 @@ class SignUpScreen(tk.Frame):
                   bg="#EECFA3", fg="black", relief="ridge",
                   command=self.validate_manager_key).pack(side="left", padx=10)
 
+    # used if you are a manager
     def toggle_manager_key(self, event):
         if self.role_var.get() == "Manager":
             self.manager_key_label.grid(row=0, column=2, padx=10)
@@ -65,8 +66,8 @@ class SignUpScreen(tk.Frame):
             self.manager_key_label.grid_forget()
             self.manager_key_entry.grid_forget()
 
+    # checks to see if key is correct
     def validate_manager_key(self):
-        """Validate the manager key."""
         # If the role is 'Manager', check if the manager key matches 'chungus'
         if self.role_var.get() == "Manager":
             manager_key = self.manager_key_entry.get()
@@ -76,8 +77,8 @@ class SignUpScreen(tk.Frame):
 
         self.register_user()
 
+    # puts information into database
     def register_user(self):
-        """Collect user input and insert into the database."""
         first_name = self.entries["First Name:"].get()
         last_name = self.entries["Last Name:"].get()
         phone = self.entries["Phone Number:"].get()

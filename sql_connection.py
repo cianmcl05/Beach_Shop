@@ -1,9 +1,12 @@
 import mysql.connector
 from mysql.connector import Error
 
+
+# connects to sql database
 def connect_db():
     """Establish connection to MySQL database."""
     try:
+        # put in correct details
         connection = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -16,15 +19,15 @@ def connect_db():
         return None
 
 
+# inserts users into database for signing up
 def insert_user(first_name, last_name, phone, email, password, role):
-    """Insert a new user into the database."""
     connection = connect_db()
     if connection:
         try:
             cursor = connection.cursor()
 
             # Hash password (use actual hashing in production)
-            hashed_password = password  # fix
+            hashed_password = password
 
             query = """INSERT INTO Employee (Name, Phone, Email, role, password) 
                        VALUES (%s, %s, %s, %s, %s)"""
