@@ -73,7 +73,7 @@ class SignUpScreen(tk.Frame):
             manager_key = self.manager_key_entry.get()
             if manager_key != "chungus":
                 tk.messagebox.showerror("Error", "Invalid Manager Key!")
-                return  # Don't proceed with signup if key is incorrect
+                return
 
         self.register_user()
 

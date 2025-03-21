@@ -46,13 +46,13 @@ class LoginScreen(tk.Frame):
 
     # used to identify user and log them in
     def login(self):
-        empid = self.empid_entry.get()
+        email = self.email_entry.get()
         password = self.password_entry.get()
 
-        if self.authenticate_user(empid, password):
+        if self.authenticate_user(email, password):
             messagebox.showinfo("Login Success", "Welcome back!")
         else:
-            messagebox.showerror("Login Failed", "Invalid EmpID or Password.")
+            messagebox.showerror("Login Failed", "Invalid email or Password.")
 
     # checks if credentials are in the database
     def authenticate_user(self, email, password):

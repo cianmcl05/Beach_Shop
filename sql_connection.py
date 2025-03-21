@@ -8,16 +8,16 @@ def connect_db():
     try:
         # put in correct details
         connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="cmac2005",
+            host="10.101.206.23",
+            user="beach",
+            password="beach",
             database="surfshop"
         )
+        print("connection")
         return connection
     except Error as e:
         print(f"Error: {e}")
         return None
-
 
 # inserts users into database for signing up
 def insert_user(first_name, last_name, phone, email, password, role):
