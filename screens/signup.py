@@ -7,6 +7,8 @@ import screens.owner_view
 import sql_connection
 #for password hashing
 import hashlib
+#for email validation
+import re
 
 
 class SignUpScreen(tk.Frame):
@@ -100,20 +102,45 @@ class SignUpScreen(tk.Frame):
 
         self.register_user()
 
+
+    #validation functions to ensure clean signups
+    #ensures theres an @ symbol in email
+    def valid_email(self, email):
+        return "@" in email and re.match(r"[^@]+@[^@]+\.[^@]+", email)
+    #ensures correct amount of phone digits
+    def valid_phone(self, phone):
+        return phone.isdigit() and 10 <= len(phone) <= 15
+    #ensures passwords are more than or equal to 8 for security purposes
+    def valid_password(self, password):
+        return len(password) >= 8
+
     # puts information into database
     def register_user(self):
-        first_name = self.entries["First Name:"].get()
-        last_name = self.entries["Last Name:"].get()
-        phone = self.entries["Phone Number:"].get()
-        email = self.entries["Email:"].get()
-        password = self.entries["Password:"].get()
-        confirm_password = self.entries["Confirm Password:"].get()
+        first_name = self.entries["First Name:"].get().strip()
+        last_name = self.entries["Last Name:"].get().strip()
+        phone = self.entries["Phone Number:"].get().strip()
+        email = self.entries["Email:"].get().strip().lower()
+        password = self.entries["Password:"].get().strip()
+        confirm_password = self.entries["Confirm Password:"].get().strip()
         role = self.role_var.get()
         manager_key = self.manager_key_entry.get() if role == "Manager" else ""
         owner_key = self.owner_key_entry.get() if role == "Owner" else ""
 
         if password != confirm_password:
-            print("Passwords do not match!")
+            messagebox.showerror("Error", "Passwords do not match!")
+            return
+
+        #validation of password, email, and phone number with error messages
+        if not self.valid_password(password):
+            messagebox.showerror("Weak Password", "Password must contain at least 8 characters.")
+            return
+
+        if not self.valid_email(email):
+            messagebox.showerror("Invalid Email", "Email must contain valid email address with '@'.")
+            return
+
+        if not self.valid_phone(phone):
+            messagebox.showerror("Invalid Phone Number", "Phone number must be between 10-15 digits.")
             return
 
         hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
