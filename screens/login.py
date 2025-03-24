@@ -56,6 +56,9 @@ class LoginScreen(tk.Frame):
         user_role = self.authenticate_user(email, password)
 
         if user_role:
+            self.email_entry.delete(0, tk.END)
+            self.password_entry.delete(0, tk.END)
+
             messagebox.showinfo("Login Success", f"Welcome back, {user_role}!")
             if user_role == "employee":
                 master.show_frame(screens.emp_view.EmployeeView)

@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import screens.welcome
+import screens.emp_view
+import screens.manager_view
+import screens.owner_view
 import sql_connection
 
 
@@ -111,4 +114,20 @@ class SignUpScreen(tk.Frame):
             print("Passwords do not match!")
             return
 
+        # Insert user info into database
         sql_connection.insert_user(first_name, last_name, phone, email, password, role)
+
+        # Clear the input fields after successful registration
+        for entry in self.entries.values():
+            entry.delete(0, tk.END)
+        self.manager_key_entry.delete(0, tk.END)
+        self.owner_key_entry.delete(0, tk.END)
+
+        # Navigate to the right page after successful sign-up
+        messagebox.showinfo("Sign Up Successful", f"Welcome {role}!")
+        if role == "Employee":
+            self.master.show_frame(screens.emp_view.EmployeeView)
+        elif role == "Manager":
+            self.master.show_frame(screens.manager_view.ManagerView)
+        elif role == "Owner":
+            self.master.show_frame(screens.owner_view.OwnerView)

@@ -1,5 +1,6 @@
 import tkinter as tk
 import screens.welcome
+import screens.end_of_day
 
 
 class EmployeeView(tk.Frame):
@@ -13,9 +14,9 @@ class EmployeeView(tk.Frame):
                         "relief": "ridge"}
 
         tk.Button(self, text="Clock in/out", **button_style).place(x=30, y=60)
-        tk.Button(self, text="Closing Shop", **button_style).place(x=30, y=120)
+        tk.Button(self, text="End of Day Sales", **button_style,
+                  command=lambda: master.show_frame(screens.end_of_day.EndOfDaySalesScreen)).place(x=30, y=120)
         tk.Button(self, text="Log\nExpenses", **button_style).place(x=30, y=180)
-        tk.Button(self, text="End of Day Sales", **button_style).place(x=30, y=240)
 
         # Labels and Entry fields
         label_style = {"font": ("Arial", 12, "bold"), "bg": "#FFF4A3", "fg": "black"}
