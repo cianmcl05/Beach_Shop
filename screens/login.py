@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import screens.welcome
+import screens.emp_view
+import screens.manager_view
+import screens.owner_view
 from sql_connection import connect_db  # Importing the database connection function
 
 
@@ -23,7 +26,7 @@ class LoginScreen(tk.Frame):
         store_dropdown.pack(anchor="w", padx=20)
         store_dropdown.current(0)
 
-        self.create_buttons(master, screens.welcome.WelcomeScreen, "Login")
+        self.create_buttons(master, screens.welcome.WelcomeScreen, screens.emp_view.EmployeeView)
 
 # input fields
     def create_label_entry(self, text, show=""):
@@ -33,7 +36,7 @@ class LoginScreen(tk.Frame):
         return entry
 
 # back and confirm buttons
-    def create_buttons(self, master, back_screen, confirm_text):
+    def create_buttons(self, master, back_screen, confirm_screen):
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack(pady=10)
 
@@ -41,18 +44,27 @@ class LoginScreen(tk.Frame):
                   bg="#B0F2C2", fg="black", relief="ridge",
                   command=lambda: master.show_frame(back_screen)).pack(side="left", padx=10)
 
-        tk.Button(button_frame, text=confirm_text, font=("Arial", 12, "bold"), width=10, height=1,
-                  bg="#EECFA3", fg="black", relief="ridge", command=self.login).pack(side="left", padx=10)
+        tk.Button(button_frame, text="Confirm", font=("Arial", 12, "bold"), width=10, height=1,
+                  bg="#EECFA3", fg="black", relief="ridge",
+                  command=lambda: self.login(master, confirm_screen)).pack(side="left", padx=10)
 
     # used to identify user and log them in
-    def login(self):
+    def login(self, master, confirm_screen):
         email = self.email_entry.get()
         password = self.password_entry.get()
 
-        if self.authenticate_user(email, password):
-            messagebox.showinfo("Login Success", "Welcome back!")
+        user_role = self.authenticate_user(email, password)
+
+        if user_role:
+            messagebox.showinfo("Login Success", f"Welcome back, {user_role}!")
+            if user_role == "employee":
+                master.show_frame(screens.emp_view.EmployeeView)
+            elif user_role == "manager":
+                master.show_frame(screens.manager_view.ManagerView)
+            else:
+                master.show_frame(screens.owner_view.OwnerView)
         else:
-            messagebox.showerror("Login Failed", "Invalid email or Password.")
+            messagebox.showerror("Login Failed", "Invalid email or password.")
 
     # checks if credentials are in the database
     def authenticate_user(self, email, password):
@@ -60,15 +72,16 @@ class LoginScreen(tk.Frame):
         if connection:
             try:
                 cursor = connection.cursor()
-                query = "SELECT * FROM Employee WHERE Email = %s AND Password = %s"
+                query = "SELECT Role FROM Employee WHERE Email = %s AND Password = %s"
                 cursor.execute(query, (email, password))
                 result = cursor.fetchone()
-                return result is not None
+                if result:
+                    return result[0].lower()
             except Exception as e:
                 print(f"Database error: {e}")
-                return False
+                return None
             finally:
-                # prevents open connections
                 cursor.close()
                 connection.close()
-        return False  # Return False if connection fails
+        return None  # Return None if authentication fails
+

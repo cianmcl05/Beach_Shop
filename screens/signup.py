@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import screens.welcome
 import sql_connection
 
@@ -17,13 +17,16 @@ class SignUpScreen(tk.Frame):
 
         tk.Label(role_frame, text="Role:", font=("Arial", 12), bg="#FFF4A3").grid(row=0, column=0, padx=5)
         self.role_var = tk.StringVar()
-        role_dropdown = ttk.Combobox(role_frame, values=["Employee", "Manager"], font=("Arial", 12), textvariable=self.role_var)
+        role_dropdown = ttk.Combobox(role_frame, values=["Employee", "Manager", "Owner"], font=("Arial", 12), textvariable=self.role_var)
         role_dropdown.grid(row=0, column=1, padx=5)
         role_dropdown.current(0)
-        role_dropdown.bind("<<ComboboxSelected>>", self.toggle_manager_key)
+        role_dropdown.bind("<<ComboboxSelected>>", self.toggle_role_keys)
 
         self.manager_key_label = tk.Label(role_frame, text="Manager Key:", font=("Arial", 12), bg="#FFF4A3")
         self.manager_key_entry = tk.Entry(role_frame, font=("Arial", 12), show="*")
+
+        self.owner_key_label = tk.Label(role_frame, text="Owner Key:", font=("Arial", 12), bg="#FFF4A3")
+        self.owner_key_entry = tk.Entry(role_frame, font=("Arial", 12), show="*")
 
         self.create_label_entry("First Name:")
         self.create_label_entry("Last Name:")
@@ -55,24 +58,39 @@ class SignUpScreen(tk.Frame):
 
         tk.Button(button_frame, text=confirm_text, font=("Arial", 12, "bold"), width=10, height=1,
                   bg="#EECFA3", fg="black", relief="ridge",
-                  command=self.validate_manager_key).pack(side="left", padx=10)
+                  command=self.validate_role_keys).pack(side="left", padx=10)
 
-    # used if you are a manager
-    def toggle_manager_key(self, event):
+    # used if you are a manager or owner
+    def toggle_role_keys(self, event):
         if self.role_var.get() == "Manager":
             self.manager_key_label.grid(row=0, column=2, padx=10)
             self.manager_key_entry.grid(row=0, column=3, padx=10)
+            self.owner_key_label.grid_forget()
+            self.owner_key_entry.grid_forget()
+        elif self.role_var.get() == "Owner":
+            self.manager_key_label.grid_forget()
+            self.manager_key_entry.grid_forget()
+            self.owner_key_label.grid(row=0, column=2, padx=10)
+            self.owner_key_entry.grid(row=0, column=3, padx=10)
         else:
             self.manager_key_label.grid_forget()
             self.manager_key_entry.grid_forget()
+            self.owner_key_label.grid_forget()
+            self.owner_key_entry.grid_forget()
 
-    # checks to see if key is correct
-    def validate_manager_key(self):
-        # If the role is 'Manager', check if the manager key matches 'chungus'
-        if self.role_var.get() == "Manager":
+    # checks to see if the key is correct
+    def validate_role_keys(self):
+        role = self.role_var.get()
+
+        if role == "Manager":
             manager_key = self.manager_key_entry.get()
             if manager_key != "chungus":
-                tk.messagebox.showerror("Error", "Invalid Manager Key!")
+                messagebox.showerror("Error", "Invalid Manager Key!")
+                return
+        elif role == "Owner":
+            owner_key = self.owner_key_entry.get()
+            if owner_key != "freakbob":
+                messagebox.showerror("Error", "Invalid Owner Key!")
                 return
 
         self.register_user()
@@ -87,6 +105,7 @@ class SignUpScreen(tk.Frame):
         confirm_password = self.entries["Confirm Password:"].get()
         role = self.role_var.get()
         manager_key = self.manager_key_entry.get() if role == "Manager" else ""
+        owner_key = self.owner_key_entry.get() if role == "Owner" else ""
 
         if password != confirm_password:
             print("Passwords do not match!")

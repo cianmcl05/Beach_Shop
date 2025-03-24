@@ -17,7 +17,8 @@ class BeachShopApp(tk.Tk):
         self.frames = {}
 
         # Initialize screens
-        for F in (screens.welcome.WelcomeScreen, screens.login.LoginScreen, screens.signup.SignUpScreen):
+        for F in (screens.welcome.WelcomeScreen, screens.login.LoginScreen, screens.signup.SignUpScreen,
+                  screens.emp_view.EmployeeView, screens.manager_view.ManagerView, screens.owner_view.OwnerView):
             frame = F(self)
             self.frames[F] = frame
             frame.place(relwidth=1, relheight=1)
