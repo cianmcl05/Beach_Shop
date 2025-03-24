@@ -5,6 +5,8 @@ import screens.emp_view
 import screens.manager_view
 import screens.owner_view
 import sql_connection
+#for password hashing
+import hashlib
 
 
 class SignUpScreen(tk.Frame):
@@ -114,8 +116,10 @@ class SignUpScreen(tk.Frame):
             print("Passwords do not match!")
             return
 
+        hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+
         # Insert user info into database
-        sql_connection.insert_user(first_name, last_name, phone, email, password, role)
+        sql_connection.insert_user(first_name, last_name, phone, email, hashed_password, role)
 
         # Clear the input fields after successful registration
         for entry in self.entries.values():
