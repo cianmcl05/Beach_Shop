@@ -5,7 +5,7 @@ import screens.emp_view
 import screens.manager_view
 import screens.owner_view
 from sql_connection import connect_db  # Importing the database connection function
-
+import hashlib
 
 class LoginScreen(tk.Frame):
     def __init__(self, master):
@@ -71,12 +71,14 @@ class LoginScreen(tk.Frame):
 
     # checks if credentials are in the database
     def authenticate_user(self, email, password):
+        hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+
         connection = connect_db()
         if connection:
             try:
                 cursor = connection.cursor()
                 query = "SELECT Role FROM Employee WHERE Email = %s AND Password = %s"
-                cursor.execute(query, (email, password))
+                cursor.execute(query, (email, hashed_password))
                 result = cursor.fetchone()
                 if result:
                     return result[0].lower()
