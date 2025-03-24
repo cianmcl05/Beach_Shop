@@ -1,0 +1,47 @@
+import tkinter as tk
+from tkinter import ttk
+
+# Root window
+root = tk.Tk()
+root.title("Employees")
+root.configure(bg="#fff7a8")
+root.geometry("900x450")
+
+# Title
+title_label = tk.Label(
+    root, text="Employees", font=("Helvetica", 18, "bold"),
+    bg="#d9d6f2", fg="black", relief="raised", padx=20, pady=5
+)
+title_label.place(relx=0.5, y=20, anchor="n")  # Centered at the top
+
+# Back button
+back_button = tk.Button(
+    root, text="Back", font=("Helvetica", 12),
+    bg="#b9f1c0", fg="black", padx=10, pady=5, relief="groove"
+)
+back_button.place(x=20, y=20)
+
+# Table headers
+headers = ["Name", "Phone", "Email", "Role", "Username", "Password"]
+for col, header in enumerate(headers):
+    label = tk.Label(
+        root, text=header + ":", font=("Helvetica", 12, "bold"),
+        bg="#fff7a8", anchor="w"
+    )
+    label.place(x=40 + col * 140, y=80)
+
+# Entry grid
+rows = 7
+cols = len(headers)
+entries = []
+
+for row in range(rows):
+    row_entries = []
+    for col in range(cols):
+        entry = tk.Entry(root, width=18, font=("Helvetica", 10))
+        entry.place(x=40 + col * 140, y=110 + row * 35)
+        row_entries.append(entry)
+    entries.append(row_entries)
+
+root.mainloop()
+
