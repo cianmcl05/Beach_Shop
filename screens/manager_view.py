@@ -1,6 +1,11 @@
 import tkinter as tk
 import screens.welcome
-
+'''import screens.employees
+import screens.merchandise
+import screens.pay
+import screens.sales
+import screens.bonus
+import screens.invoices'''
 
 class ManagerView(tk.Frame):
     def __init__(self, master):
@@ -12,18 +17,21 @@ class ManagerView(tk.Frame):
         button_style = {"font": ("Arial", 12, "bold"), "width": 15, "height": 2, "bg": "#D8D5F2", "fg": "black",
                         "relief": "ridge"}
 
-        # Labels and Entry fields
-        label_style = {"font": ("Arial", 12, "bold"), "bg": "#FFF4A3", "fg": "black"}
-        entry_style = {"font": ("Arial", 12), "width": 20}
 
-        tk.Label(self, text="Reg $ in:", **label_style).place(x=230, y=70)
-        tk.Entry(self, **entry_style).place(x=320, y=70, height=25)
 
-        tk.Label(self, text="Reg $ out:", **label_style).place(x=230, y=130)
-        tk.Entry(self, **entry_style).place(x=320, y=130, height=25)
+        # Buttons for manager actions
+        buttons = [
+            ("Employees", 50, 80),
+            ("Merchandise", 50, 130),
+            ("Pay", 50, 180),
+            ("End of Day Sales", 250, 80),
+            ("Bonus", 250, 130),
+            ("Invoices", 250, 180)
+        ]
+
+        for text, x, y in buttons:
+            tk.Button(self, text=text, **button_style).place(x=x, y=y)
 
         # Logout Button
         tk.Button(self, text="Log out", font=("Arial", 12, "bold"), width=12, height=1, bg="#B0F2C2", fg="black",
-                  relief="ridge", command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).place(x=30, y=260)
-
-
+                  relief="ridge", command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).place(x=150, y=260)
