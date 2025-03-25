@@ -9,8 +9,8 @@ def connect_db():
         # put in correct details
         connection = mysql.connector.connect(
             host="localhost",
-            user="beach",
-            password="beach",
+            user="root",
+            password="cmac2005",
             database="surfshop"
         )
         print("connection")

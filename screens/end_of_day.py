@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
 import screens.emp_view
-import screens.emp_view
+import screens.manager_view  # Assuming you have the manager view
+import screens.owner_view  # Assuming you might need owner view too
 
 
 class EndOfDaySalesScreen(tk.Frame):
@@ -30,9 +31,19 @@ class EndOfDaySalesScreen(tk.Frame):
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack(pady=10)
 
-        # Back Button
+        # Get the user's role from the master app
+        user_role = master.user_role  # This assumes that the role is already set in the master app
+
+        # Back Button: Adjust based on user role
+        if user_role == "employee":
+            back_screen = screens.emp_view.EmployeeView
+        elif user_role == "manager":
+            back_screen = screens.manager_view.ManagerView
+        else:
+            back_screen = screens.owner_view.OwnerView
+
         tk.Button(button_frame, text="Back", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#B0F2C2",
-                  fg="black", relief="ridge", command=lambda: master.show_frame(screens.emp_view.EmployeeView)).pack(side="left", padx=10)
+                  fg="black", relief="ridge", command=lambda: master.show_frame(back_screen)).pack(side="left", padx=10)
 
         # Confirm Button
         tk.Button(button_frame, text="Confirm", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#EECFA3",
@@ -47,4 +58,3 @@ class EndOfDaySalesScreen(tk.Frame):
             messagebox.showwarning("Missing Information", "Please fill in all fields.")
         else:
             messagebox.showinfo("Sales Recorded", "End of day sales recorded successfully!")
-

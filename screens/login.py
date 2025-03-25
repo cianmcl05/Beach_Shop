@@ -28,14 +28,14 @@ class LoginScreen(tk.Frame):
 
         self.create_buttons(master, screens.welcome.WelcomeScreen, screens.emp_view.EmployeeView)
 
-# input fields
+    # input fields
     def create_label_entry(self, text, show=""):
         tk.Label(self, text=text, font=("Arial", 12), bg="#FFF4A3").pack(anchor="w", padx=20)
         entry = tk.Entry(self, font=("Arial", 12), show=show)
         entry.pack(anchor="w", padx=20)
         return entry
 
-# back and confirm buttons
+    # back and confirm buttons
     def create_buttons(self, master, back_screen, confirm_screen):
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack(pady=10)
@@ -60,6 +60,14 @@ class LoginScreen(tk.Frame):
             self.password_entry.delete(0, tk.END)
 
             messagebox.showinfo("Login Success", f"Welcome back, {user_role}!")
+
+            # Store the user role in the main app class
+            master.user_role = user_role
+            print(master.user_role)
+
+            # Reset frames and show the correct screen based on the user role
+            master.reset_frames_after_login()
+
             if user_role == "employee":
                 master.show_frame(screens.emp_view.EmployeeView)
             elif user_role == "manager":
@@ -89,4 +97,5 @@ class LoginScreen(tk.Frame):
                 cursor.close()
                 connection.close()
         return None  # Return None if authentication fails
+
 
