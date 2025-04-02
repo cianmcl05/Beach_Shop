@@ -91,12 +91,12 @@ class SignUpScreen(tk.Frame):
 
         if role == "Manager":
             manager_key = self.manager_key_entry.get()
-            if manager_key != "chungus":
+            if manager_key != "manager":
                 messagebox.showerror("Error", "Invalid Manager Key!")
                 return
         elif role == "Owner":
             owner_key = self.owner_key_entry.get()
-            if owner_key != "freakbob":
+            if owner_key != "owner":
                 messagebox.showerror("Error", "Invalid Owner Key!")
                 return
 
