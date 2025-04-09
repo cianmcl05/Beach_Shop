@@ -1,3 +1,4 @@
+USE surfshop;
 
 CREATE TABLE Store (
     Store_ID INT PRIMARY KEY AUTO_INCREMENT,
@@ -11,10 +12,8 @@ CREATE TABLE Employee (
     Phone VARCHAR(15) NOT NULL,
     Email VARCHAR(255) UNIQUE NOT NULL,
     Role ENUM('employee', 'manager', 'owner') DEFAULT 'employee',
-    Username VARCHAR(255) UNIQUE NOT NULL,
-    Password VARCHAR(255) NOT NULL, -- Store hashed passwords
-    StoreID INT,
-    FOREIGN KEY (StoreID) REFERENCES Store(Store_ID) ON DELETE SET NULL
+
+    Password VARCHAR(255) NOT NULL -- Store hashed passwords
 );
 
 CREATE TABLE Employee_Time (
@@ -58,11 +57,10 @@ CREATE TABLE Payroll (
     ID INT PRIMARY KEY AUTO_INCREMENT,
     Date DATE NOT NULL,
     EmpID INT,
-    Payroll DECIMAL(10,2) NOT NULL,
+    Payroll INT NOT NULL,
     FOREIGN KEY (EmpID) REFERENCES Employee(ID) ON DELETE CASCADE
 );
 
--- Invoice Table
 CREATE TABLE Invoice (
     InvoiceID INT PRIMARY KEY AUTO_INCREMENT,
     InvoiceNumber VARCHAR(255) UNIQUE NOT NULL,
