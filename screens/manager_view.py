@@ -32,25 +32,25 @@ class ManagerView(tk.Frame):
         for text, x, y in buttons:
             if text == "Employees":
                 tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.employee_table.EmployeesScreen)).place(x=x, y=y)
+                          command=lambda: master.show_frame(screens.employee_table.EmployeesScreen, user_role="manager")).place(x=x, y=y)
             elif text == "Merchandise":
                 tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.merch.MerchandiseInventoryScreen)).place(x=x, y=y)
+                          command=lambda: master.show_frame(screens.merch.MerchandiseInventoryScreen, user_role="manager")).place(x=x, y=y)
             elif text == "Invoices":
                 tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.invoices.InvoicesScreen)).place(x=x, y=y)
+                          command=lambda: master.show_frame(screens.invoices.InvoicesScreen, user_role="manager")).place(x=x, y=y)
             elif text == "End of Day Sales":
                 tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.end_of_day.EndOfDaySalesScreen)).place(x=x, y=y)
+                          command=lambda: master.show_frame(screens.end_of_day.EndOfDaySalesScreen, user_role="manager")).place(x=x, y=y)
             elif text == "Add Expense":
                 tk.Button(self, text=text, **button_style,
                           command=lambda: master.show_frame(screens.expenses.Expenses, user_role="manager")).place(x=x, y=y)
             elif text == "Pay":
                 tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.payroll.PayrollScreen)).place(x=x, y=y)
+                          command=lambda: master.show_frame(screens.payroll.PayrollScreen, user_role="manager")).place(x=x, y=y)
             elif text == "Bonus":
                 tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.bonus.Bonus)).place(x=x, y=y)
+                          command=lambda: master.show_frame(screens.bonus.Bonus, user_role="manager")).place(x=x, y=y)
             else:
                 tk.Button(self, text=text, **button_style).place(x=x, y=y)
 

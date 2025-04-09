@@ -1,12 +1,14 @@
 import tkinter as tk
 from tkinter import ttk
-import screens.manager_view  # Import ManagerView screen
-
+import screens.manager_view
+import screens.owner_view
+import screens.emp_view  # Add this if you support employee view too
 
 class MerchandiseInventoryScreen(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, user_role="manager"):
         super().__init__(master, bg="#FFF4A3")
         self.master = master
+        self.user_role = user_role
 
         # Header Label
         self.header_label = tk.Label(self, text="Merchandise Inventory", font=("Arial", 16, "bold"), bg="#FFF4A3", fg="black")
@@ -16,9 +18,16 @@ class MerchandiseInventoryScreen(tk.Frame):
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack()
 
+        # Back button with dynamic logic
+        if self.user_role == "employee":
+            back_command = lambda: self.master.show_frame(screens.emp_view.EmployeeView)
+        elif self.user_role == "manager":
+            back_command = lambda: self.master.show_frame(screens.manager_view.ManagerView)
+        else:
+            back_command = lambda: self.master.show_frame(screens.owner_view.OwnerView)
+
         self.back_button = tk.Button(button_frame, text="Back", font=("Arial", 12, "bold"), width=10, height=1,
-                                     bg="#B0F2C2", fg="black", relief="ridge",
-                                     command=lambda: self.master.show_frame(screens.manager_view.ManagerView))
+                                     bg="#B0F2C2", fg="black", relief="ridge", command=back_command)
         self.back_button.pack(side=tk.LEFT, padx=10)
 
         self.add_button = tk.Button(button_frame, text="Add", font=("Arial", 12, "bold"), width=10, height=1,
@@ -35,7 +44,15 @@ class MerchandiseInventoryScreen(tk.Frame):
         self.clear_screen()
         self.header_label.config(text="Merchandise Inventory")
         self.add_button.config(text="Add", command=self.show_add_screen)
-        self.back_button.config(command=lambda: self.master.show_frame(screens.manager_view.ManagerView))
+
+        # Reset back button to original screen
+        if self.user_role == "employee":
+            back_command = lambda: self.master.show_frame(screens.emp_view.EmployeeView)
+        elif self.user_role == "manager":
+            back_command = lambda: self.master.show_frame(screens.manager_view.ManagerView)
+        else:
+            back_command = lambda: self.master.show_frame(screens.owner_view.OwnerView)
+        self.back_button.config(command=back_command)
 
         # Table Headers
         columns = ["Date", "Day", "Merch Type", "Merch Value", "Total Merch"]
@@ -44,7 +61,7 @@ class MerchandiseInventoryScreen(tk.Frame):
             label.grid(row=0, column=i, padx=2, pady=2, sticky="nsew")
 
         # Table Rows (Empty for now)
-        for r in range(1, 6):  # 5 empty rows
+        for r in range(1, 6):
             for c in range(5):
                 entry = tk.Entry(self.table_frame, font=("Arial", 10), borderwidth=1, relief="solid", width=13)
                 entry.grid(row=r, column=c, padx=2, pady=2, sticky="nsew")
@@ -66,4 +83,3 @@ class MerchandiseInventoryScreen(tk.Frame):
     def clear_screen(self):
         for widget in self.table_frame.winfo_children():
             widget.destroy()
-

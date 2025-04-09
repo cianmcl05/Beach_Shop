@@ -67,12 +67,11 @@ class LoginScreen(tk.Frame):
 
             # Reset frames and show the correct screen based on the user role
             master.reset_frames_after_login()
-
             if user_role == "employee":
                 master.show_frame(screens.emp_view.EmployeeView)
             elif user_role == "manager":
                 master.show_frame(screens.manager_view.ManagerView)
-            else:
+            elif user_role == "owner":
                 master.show_frame(screens.owner_view.OwnerView)
         else:
             messagebox.showerror("Login Failed", "Invalid email or password.")

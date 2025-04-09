@@ -1,11 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
-import screens.manager_view  # Make sure to import ManagerView class
-
+import screens.manager_view
+import screens.owner_view
 
 class EmployeesScreen(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, user_role="manager"):  # Accept user_role in constructor
         super().__init__(master, bg="#fff7a8")
+        self.user_role = user_role  # Store the role
 
         # Header
         title = tk.Label(self, text="Employees", font=("Helvetica", 16, "bold"), bg="#d9d6f2", padx=20, pady=5, relief="raised")
@@ -35,9 +36,14 @@ class EmployeesScreen(tk.Frame):
         button_frame = tk.Frame(self, bg="#fff7a8")
         button_frame.pack(pady=5)
 
-        # Back Button
+        # Back Button logic based on user role
+        if self.user_role == "manager":
+            back_command = lambda: master.show_frame(screens.manager_view.ManagerView)
+        else:
+            back_command = lambda: master.show_frame(screens.owner_view.OwnerView)
+
         tk.Button(button_frame, text="Back", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#A4E4A0",
-                  fg="black", relief="ridge", command=lambda: master.show_frame(screens.manager_view.ManagerView)).pack(side="left", padx=10)
+                  fg="black", relief="ridge", command=back_command).pack(side="left", padx=10)
 
         # Save Button
         tk.Button(button_frame, text="Save", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#E58A2C",
@@ -78,11 +84,10 @@ class EmployeesScreen(tk.Frame):
                   fg="black", relief="ridge", command=lambda: self.confirm_add(add_window)).pack(side="left", padx=10)
 
     def confirm_add(self, window):
-        # Adding employee data to table (in a real application, you'd save it somewhere)
         employee_data = (self.name_entry.get(), self.phone_entry.get(), self.email_entry.get(),
                          self.role_entry.get(), self.username_entry.get(), self.password_entry.get())
         self.tree.insert("", "end", values=employee_data)
         window.destroy()
 
     def save_data(self):
-        print("Data saved!")  # Placeholder for actual save functionality
+        print("Data saved!")  # Placeholder

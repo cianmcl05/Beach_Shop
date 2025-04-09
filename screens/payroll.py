@@ -1,58 +1,89 @@
 import tkinter as tk
+from tkinter import ttk
+import screens.emp_view
 import screens.manager_view
+import screens.owner_view
 
 class PayrollScreen(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, user_role):
         super().__init__(master, bg="#fff7a8")
+        self.user_role = user_role
         self.master = master
-        self.build_payroll_list()
 
-    def clear_screen(self):
-        for widget in self.winfo_children():
-            widget.destroy()
+        # Header
+        tk.Label(self, text="Payroll", font=("Helvetica", 16, "bold"), bg="#d9d6f2",
+                 padx=20, pady=5, relief="raised").pack(pady=10)
 
-    def show_payroll_list(self):
-        self.clear_screen()
-        self.build_payroll_list()
+        # Table Frame
+        self.table_frame = tk.Frame(self, bg="#fff7a8")
+        self.table_frame.pack(pady=10)
 
-    def show_payroll_form(self):
-        self.clear_screen()
-        self.build_payroll_form()
+        # Treeview (Table)
+        columns = ("Date", "Employee", "Pay Amount")
+        self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=120)
+        self.tree.pack()
 
-    def build_payroll_list(self):
-        # Top buttons and title
+        # Buttons
+        self.create_buttons()
+
+        # Add Payroll Entry Button
+        tk.Button(self, text="Add Payroll Entry", font=("Helvetica", 12, "bold"), width=18, height=1, bg="#ffa94d",
+                  command=self.open_add_payroll_window).pack(pady=5)
+
+    def create_buttons(self):
         button_frame = tk.Frame(self, bg="#fff7a8")
-        button_frame.place(x=10, y=10)
+        button_frame.pack(pady=5)
+
+        # Back Button: Go to EmployeeView or ManagerView or OwnerView based on user role
+        if self.user_role == "manager":
+            back_command = lambda: self.master.show_frame(screens.manager_view.ManagerView)
+        else:  # For owners
+            back_command = lambda: self.master.show_frame(screens.owner_view.OwnerView)
 
         tk.Button(button_frame, text="Back", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#A4E4A0",
-                  fg="black", relief="ridge",
-                  command=lambda: self.master.show_frame(screens.manager_view.ManagerView)).pack(side="left", padx=10)
+                  fg="black", relief="ridge", command=back_command).pack(side="left", padx=10)
 
-        tk.Label(self, text="Pay", font=("Helvetica", 16, "bold"), bg="#d9d6f2",
-                 padx=20, pady=5, relief="raised").place(relx=0.5, y=10, anchor="n")
-        tk.Button(self, text="Add", font=("Helvetica", 11), bg="#ffa94d",
-                  command=self.show_payroll_form).place(x=430, y=10)
+        # Save Button
+        tk.Button(button_frame, text="Save", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#E58A2C",
+                  fg="black", relief="ridge", command=self.save_data).pack(side="left", padx=10)
 
-        # Table headers
-        headers = ["Date:", "Employee:", "Pay Amount:"]
-        for col, header in enumerate(headers):
-            tk.Label(self, text=header, font=("Helvetica", 11, "bold"), bg="#fff7a8").place(x=30 + col * 140, y=60)
+    def open_add_payroll_window(self):
+        add_window = tk.Toplevel(self)
+        add_window.title("Add Payroll Entry")
+        add_window.configure(bg="#fff7a8")
 
-        # Dummy rows
-        for row in range(3):
-            for col in range(len(headers)):
-                tk.Entry(self, width=18).place(x=30 + col * 140, y=90 + row * 35)
+        # Form Labels & Entry Fields
+        self.employee_entry = self.create_label_entry(add_window, "Employee:")
+        self.amount_entry = self.create_label_entry(add_window, "Amount:")
 
-    def build_payroll_form(self):
-        tk.Button(self, text="Back", font=("Helvetica", 11), bg="#b9f1c0",
-                  command=self.show_payroll_list).place(x=10, y=10)
-        tk.Label(self, text="Pay", font=("Helvetica", 16, "bold"), bg="#d9d6f2",
-                 padx=20, pady=5, relief="raised").place(relx=0.5, y=10, anchor="n")
-        tk.Button(self, text="Confirm", font=("Helvetica", 11), bg="#ffa94d").place(x=410, y=10)
+        # Buttons
+        self.create_add_payroll_buttons(add_window)
 
-        # Form labels + entries
-        tk.Label(self, text="Employee:", bg="#fff7a8", font=("Helvetica", 11)).place(x=50, y=80)
-        tk.Entry(self, width=25).place(x=140, y=80)
+    def create_label_entry(self, parent, text, show=""):
+        tk.Label(parent, text=text, font=("Helvetica", 12), bg="#fff7a8").pack(anchor="w", padx=20)
+        entry = tk.Entry(parent, font=("Helvetica", 12), show=show, width=30)
+        entry.pack(anchor="w", padx=20, pady=5)
+        return entry
 
-        tk.Label(self, text="Amount:", bg="#fff7a8", font=("Helvetica", 11)).place(x=50, y=120)
-        tk.Entry(self, width=25).place(x=140, y=120)
+    def create_add_payroll_buttons(self, add_window):
+        button_frame = tk.Frame(add_window, bg="#fff7a8")
+        button_frame.pack(pady=10)
+
+        # Back Button
+        tk.Button(button_frame, text="Back", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#A4E4A0",
+                  fg="black", relief="ridge", command=add_window.destroy).pack(side="left", padx=10)
+
+        # Confirm Button
+        tk.Button(button_frame, text="Confirm", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#E58A2C",
+                  fg="black", relief="ridge", command=lambda: self.confirm_add(add_window)).pack(side="left", padx=10)
+
+    def confirm_add(self, window):
+        # For now, dummy data added with "N/A" as placeholder for date
+        self.tree.insert("", "end", values=("N/A", self.employee_entry.get(), self.amount_entry.get()))
+        window.destroy()
+
+    def save_data(self):
+        print("Payroll data saved!")  # Placeholder for actual save functionality

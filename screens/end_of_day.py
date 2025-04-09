@@ -3,12 +3,12 @@ from tkinter import messagebox
 import screens.emp_view
 import screens.manager_view  # Assuming you have the manager view
 import screens.owner_view  # Assuming you might need owner view too
-
+import screens.emp_view
 
 class EndOfDaySalesScreen(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, user_role):
         super().__init__(master, bg="#FFF4A3")
-
+        self.user_role = user_role  # Store the user's role
         # Header
         title = tk.Label(self, text="End of Day\nSales", font=("Helvetica", 16, "bold"), bg="#d9d6f2", padx=20, pady=5, relief="raised")
         title.pack(pady=10)
@@ -33,7 +33,7 @@ class EndOfDaySalesScreen(tk.Frame):
 
         # Get the user's role from the master app
         user_role = master.user_role  # This assumes that the role is already set in the master app
-
+        print("hello", user_role)
         # Back Button: Adjust based on user role
         if user_role == "employee":
             back_screen = screens.emp_view.EmployeeView

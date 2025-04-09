@@ -91,12 +91,12 @@ class SignUpScreen(tk.Frame):
 
         if role == "Manager":
             manager_key = self.manager_key_entry.get()
-            if manager_key != "chungus":
+            if manager_key != "manager":
                 messagebox.showerror("Error", "Invalid Manager Key!")
                 return
         elif role == "Owner":
             owner_key = self.owner_key_entry.get()
-            if owner_key != "freakbob":
+            if owner_key != "owner":
                 messagebox.showerror("Error", "Invalid Owner Key!")
                 return
 
@@ -156,9 +156,5 @@ class SignUpScreen(tk.Frame):
 
         # Navigate to the right page after successful sign-up
         messagebox.showinfo("Sign Up Successful", f"Welcome {role}!")
-        if role == "Employee":
-            self.master.show_frame(screens.emp_view.EmployeeView)
-        elif role == "Manager":
-            self.master.show_frame(screens.manager_view.ManagerView)
-        elif role == "Owner":
-            self.master.show_frame(screens.owner_view.OwnerView)
+        self.master.show_frame(screens.welcome.WelcomeScreen)
+
