@@ -1,0 +1,106 @@
+import tkinter as tk
+
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Professional Welcome Screen")
+        self.geometry("800x500")
+        self.resizable(False, False)
+        
+        # This dictionary holds our different screens
+        self.frames = {}
+        
+        # Initialize each screen and use place() to stack them on top of each other
+        for F in (WelcomeScreen, SignUpScreen, LoginScreen):
+            frame = F(self)
+            self.frames[F] = frame
+            frame.place(relx=0, rely=0, relwidth=1, relheight=1)
+        
+        # Show the welcome screen first
+        self.show_frame(WelcomeScreen)
+    
+    def show_frame(self, frame_class):
+        """Bring the selected frame to the front."""
+        frame = self.frames[frame_class]
+        frame.tkraise()
+
+class WelcomeScreen(tk.Frame):
+    def __init__(self, master):
+        super().__init__(master)
+        # Set background color for a professional look
+        self.configure(bg="#F7F7E8")
+        
+        # Try to load the palm tree image
+        try:
+            self.palm_image = tk.PhotoImage(file="Palmtree.png")
+            # Display the image on the right side using place for more flexibility
+            image_label = tk.Label(self, image=self.palm_image, bg="#F7F7E8")
+            image_label.place(relx=0.65, rely=0.1)
+        except Exception as e:
+            print("Error loading Palmtree.png:", e)
+        
+        # Welcome title
+        welcome_label = tk.Label(self, text="Welcome", font=("Arial", 28, "bold"),
+                                 bg="#F7F7E8", fg="#333333")
+        welcome_label.place(relx=0.1, rely=0.2)
+        
+        # Sign-up button
+        signup_button = tk.Button(self, text="Sign up", font=("Arial", 14, "bold"),
+                                  bg="#B0F2C2", fg="black", relief="ridge",
+                                  command=lambda: master.show_frame(SignUpScreen))
+        signup_button.place(relx=0.1, rely=0.4, width=120, height=40)
+        
+        # Login button
+        login_button = tk.Button(self, text="Login", font=("Arial", 14, "bold"),
+                                 bg="#EECFA3", fg="black", relief="ridge",
+                                 command=lambda: master.show_frame(LoginScreen))
+        login_button.place(relx=0.1, rely=0.5, width=120, height=40)
+        
+        # Optional tagline
+        tagline_label = tk.Label(self, text= "ufuhmichop",
+                                 font=("Arial", 12), bg="#F7F7E8", fg="#555555")
+        tagline_label.place(relx=0.1, rely=0.6)
+
+class SignUpScreen(tk.Frame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.configure(bg="#F0F0F0")
+        
+        # Title for the sign-up screen
+        label = tk.Label(self, text="Sign Up", font=("Arial", 28, "bold"),
+                         bg="#F0F0F0", fg="#333333")
+        label.pack(pady=40)
+        
+        # Placeholder text for where the sign-up form might go
+        info_label = tk.Label(self, text="Sign-up form will be here",
+                              font=("Arial", 14), bg="#F0F0F0", fg="#555555")
+        info_label.pack(pady=20)
+        
+        # Button to go back to the welcome screen
+        back_button = tk.Button(self, text="Back to Welcome", font=("Arial", 12),
+                                command=lambda: master.show_frame(WelcomeScreen))
+        back_button.pack(pady=20)
+
+class LoginScreen(tk.Frame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.configure(bg="#F0F0F0")
+        
+        # Title for the login screen
+        label = tk.Label(self, text="Login", font=("Arial", 28, "bold"),
+                         bg="#F0F0F0", fg="#333333")
+        label.pack(pady=40)
+        
+        # Placeholder text for the login form
+        info_label = tk.Label(self, text="Login form will be here",
+                              font=("Arial", 14), bg="#F0F0F0", fg="#555555")
+        info_label.pack(pady=20)
+        
+        # Button to go back to the welcome screen
+        back_button = tk.Button(self, text="Back to Welcome", font=("Arial", 12),
+                                command=lambda: master.show_frame(WelcomeScreen))
+        back_button.pack(pady=20)
+
+if __name__ == "__main__":
+    app = App()
+    app.mainloop()
