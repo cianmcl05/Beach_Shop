@@ -68,7 +68,7 @@ class LoginScreen(tk.Frame):
             # Reset frames and show the correct screen based on the user role
             master.reset_frames_after_login()
             if user_role == "employee":
-                master.show_frame(screens.emp_view.EmployeeView)
+                master.show_frame(screens.emp_view.EmployeeView, emp_id=self.emp_id)
             elif user_role == "manager":
                 master.show_frame(screens.manager_view.ManagerView)
             elif user_role == "owner":
@@ -84,17 +84,19 @@ class LoginScreen(tk.Frame):
         if connection:
             try:
                 cursor = connection.cursor()
-                query = "SELECT Role FROM Employee WHERE Email = %s AND Password = %s"
+                query = "SELECT ID, Role FROM Employee WHERE Email = %s AND Password = %s"
                 cursor.execute(query, (email, hashed_password))
                 result = cursor.fetchone()
                 if result:
-                    return result[0].lower()
+                    emp_id, role = result
+                    self.emp_id = emp_id  # Save emp_id in this class
+                    return role.lower()
             except Exception as e:
                 print(f"Database error: {e}")
                 return None
             finally:
                 cursor.close()
                 connection.close()
-        return None  # Return None if authentication fails
+        return None
 
 

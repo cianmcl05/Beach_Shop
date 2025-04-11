@@ -1,5 +1,7 @@
 import mysql.connector
 from mysql.connector import Error
+from datetime import datetime
+
 
 
 # connects to sql database
@@ -45,3 +47,35 @@ def insert_user(first_name, last_name, phone, email, password, role):
     else:
         print("fail")
 
+
+def clock_in(emp_id):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            now = datetime.now()
+            query = """INSERT INTO Employee_Time (EmpID, ClockIn, ClockOut) VALUES (%s, %s, %s)"""
+            cursor.execute(query, (emp_id, now, now))  # initially ClockOut = ClockIn
+            connection.commit()
+            return cursor.lastrowid  # return the new record's ID
+        except Error as e:
+            print(f"Clock-in error: {e}")
+        finally:
+            cursor.close()
+            connection.close()
+    return None
+
+def clock_out(record_id):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            now = datetime.now()
+            query = """UPDATE Employee_Time SET ClockOut = %s WHERE ID = %s"""
+            cursor.execute(query, (now, record_id))
+            connection.commit()
+        except Error as e:
+            print(f"Clock-out error: {e}")
+        finally:
+            cursor.close()
+            connection.close()

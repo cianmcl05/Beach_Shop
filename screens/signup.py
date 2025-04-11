@@ -102,15 +102,16 @@ class SignUpScreen(tk.Frame):
 
         self.register_user()
 
-
-    #validation functions to ensure clean signups
-    #ensures theres an @ symbol in email
+    # validation functions to ensure clean signups
+    # ensures theres an @ symbol in email
     def valid_email(self, email):
         return "@" in email and re.match(r"[^@]+@[^@]+\.[^@]+", email)
-    #ensures correct amount of phone digits
+
+    # ensures correct amount of phone digits
     def valid_phone(self, phone):
         return phone.isdigit() and 10 <= len(phone) <= 15
-    #ensures passwords are more than or equal to 8 for security purposes
+
+    # ensures passwords are more than or equal to 8 for security purposes
     def valid_password(self, password):
         return len(password) >= 8
 

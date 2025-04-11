@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import screens.emp_view
 import screens.manager_view
-
+import screens.owner_view
 
 class Expenses(tk.Frame):
     def __init__(self, master, user_role):
@@ -37,16 +37,20 @@ class Expenses(tk.Frame):
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack(pady=5)
 
-        # Back Button: Go to EmployeeView or ManagerView based on user role
+        # Corrected back button logic
         if self.user_role == "employee":
             back_command = lambda: master.show_frame(screens.emp_view.EmployeeView)
-        if self.user_role == "manager":
+        elif self.user_role == "manager":
             back_command = lambda: master.show_frame(screens.manager_view.ManagerView)
         else:  # For owners
             back_command = lambda: master.show_frame(screens.owner_view.OwnerView)
 
         tk.Button(button_frame, text="Back", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#A4E4A0",
                   fg="black", relief="ridge", command=back_command).pack(side="left", padx=10)
+
+        # Save Button
+        tk.Button(button_frame, text="Save", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#E58A2C",
+                  fg="black", relief="ridge", command=self.save_data).pack(side="left", padx=10)
 
         # Save Button
         tk.Button(button_frame, text="Save", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#E58A2C",
