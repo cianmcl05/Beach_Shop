@@ -52,6 +52,5 @@ class BeachShopApp(tk.Tk):
         self.show_frame(screens.login.LoginScreen)
 
 
-
 app = BeachShopApp()
 app.mainloop()

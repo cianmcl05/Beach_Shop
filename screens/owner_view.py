@@ -9,9 +9,11 @@ import screens.merch  # Import MerchandiseInventoryScreen
 import screens.payroll  # Import PayrollScreen
 import screens.withdraw
 
+
 class OwnerView(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, emp_id=None):
         super().__init__(master, bg="#FFF4A3")
+        self.emp_id = emp_id
 
         tk.Label(self, text="Owner View", font=("Arial", 20, "bold"), bg="#D8D5F2", fg="black").pack(pady=10)
 
@@ -46,7 +48,8 @@ class OwnerView(tk.Frame):
                           command=lambda: master.show_frame(screens.end_of_day.EndOfDaySalesScreen, user_role="owner")).place(x=x, y=y)
             elif text == "Add Expense":
                 tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.expenses.Expenses, user_role="owner")).place(x=x, y=y)
+                          command=lambda: master.show_frame(screens.expenses.Expenses, user_role="owner",
+                                                            emp_id=self.emp_id)).place(x=x, y=y)
             elif text == "Pay":
                 tk.Button(self, text=text, **button_style,
                           command=lambda: master.show_frame(screens.payroll.PayrollScreen, user_role="owner")).place(x=x, y=y)

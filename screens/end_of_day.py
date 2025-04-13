@@ -4,12 +4,14 @@ import screens.emp_view
 import screens.manager_view  # Assuming you have the manager view
 import screens.owner_view  # Assuming you might need owner view too
 import screens.emp_view
+import sql_connection
 
 
 class EndOfDaySalesScreen(tk.Frame):
-    def __init__(self, master, user_role):
+    def __init__(self, master, user_role, emp_id=None):
         super().__init__(master, bg="#FFF4A3")
         self.user_role = user_role
+        self.emp_id = emp_id
         # Header
         title = tk.Label(self, text="End of Day\nSales", font=("Helvetica", 16, "bold"), bg="#d9d6f2", padx=20, pady=5, relief="raised")
         title.pack(pady=10)
@@ -56,5 +58,20 @@ class EndOfDaySalesScreen(tk.Frame):
 
         if not reg or not credit or not cash_in_envelope:
             messagebox.showwarning("Missing Information", "Please fill in all fields.")
-        else:
+            return
+
+        try:
+            reg = float(reg)
+            credit = float(credit)
+            cash_in_envelope = float(cash_in_envelope)
+        except ValueError:
+            messagebox.showerror("Invalid Input", "Please enter valid decimal numbers.")
+            return
+
+        from sql_connection import insert_end_of_day_sales
+        success = insert_end_of_day_sales(reg, credit, cash_in_envelope, self.emp_id)
+
+        if success:
             messagebox.showinfo("Sales Recorded", "End of day sales recorded successfully!")
+        else:
+            messagebox.showerror("Error", "Failed to save sales record.")

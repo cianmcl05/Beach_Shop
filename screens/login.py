@@ -70,9 +70,9 @@ class LoginScreen(tk.Frame):
             if user_role == "employee":
                 master.show_frame(screens.emp_view.EmployeeView, emp_id=self.emp_id)
             elif user_role == "manager":
-                master.show_frame(screens.manager_view.ManagerView)
+                master.show_frame(screens.manager_view.ManagerView, emp_id=self.emp_id)
             elif user_role == "owner":
-                master.show_frame(screens.owner_view.OwnerView)
+                master.show_frame(screens.owner_view.OwnerView, emp_id=self.emp_id)
         else:
             messagebox.showerror("Login Failed", "Invalid email or password.")
 
