@@ -11,8 +11,8 @@ def connect_db():
         # put in correct details
         connection = mysql.connector.connect(
             host="localhost",
-            user="root",
-            password="cmac2005",
+            user="beach",
+            password="beach",
             database="surfshop"
         )
         print("connection")
@@ -234,3 +234,74 @@ def insert_expense(expense_type, value, payment_method_binary, emp_id=None, stor
     finally:
         cursor.close()
         connection.close()
+
+def get_all_invoices():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            query = """
+                SELECT InvoiceNumber, Company, Amount, Payment_Status, Due_Date, Company_Status, Payment_Type
+                FROM Invoice
+            """
+            cursor.execute(query)
+            return cursor.fetchall()
+        except Error as e:
+            print("Error fetching invoices:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def insert_invoice(invoice_number, company, amount, payment_status, due_date, company_status, payment_type, store_id=None):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            query = """
+                INSERT INTO Invoice (InvoiceNumber, Company, Amount, Payment_Status, Due_Date, Company_Status, Payment_Type, StoreID)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            values = (invoice_number, company, amount, payment_status, due_date, company_status, payment_type, store_id)
+            cursor.execute(query, values)
+            connection.commit()
+        except Error as e:
+            print("Error inserting invoice:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def update_invoice(invoice_number, company, amount, payment_status, due_date, company_status, payment_type):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            query = """
+                UPDATE Invoice
+                SET Company=%s, Amount=%s, Payment_Status=%s, Due_Date=%s,
+                    Company_Status=%s, Payment_Type=%s
+                WHERE InvoiceNumber=%s
+            """
+            values = (company, amount, payment_status, due_date, company_status, payment_type, invoice_number)
+            cursor.execute(query, values)
+            connection.commit()
+        except Error as e:
+            print("Update error:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def delete_invoice(invoice_number):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM Invoice WHERE InvoiceNumber = %s", (invoice_number,))
+            connection.commit()
+        except Error as e:
+            print("Delete error:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+
