@@ -1,0 +1,108 @@
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+import screens.welcome
+import hashlib
+
+class SignUpScreen(tb.Frame):
+    def __init__(self, master):
+        super().__init__(master, bootstyle="flatly", padding=20)
+        
+        # Title Label
+        tb.Label(self, text="Create Account", font=("Arial", 16, "bold"), bootstyle="info").pack(pady=(0, 15))
+        
+        # Create a frame for form inputs
+        form_frame = tb.Frame(self, bootstyle="flatly")
+        form_frame.pack(fill="both", expand=True)
+        
+        # Role Selection - using grid for horizontal layout
+        tb.Label(form_frame, text="Role:", font=("Arial", 12), bootstyle="secondary").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        
+        self.role_var = tb.StringVar()
+        self.role_dropdown = tb.Combobox(form_frame, 
+                                         values=["Employee", "Manager"],
+                                         textvariable=self.role_var,
+                                         font=("Arial", 12))
+        self.role_dropdown.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+        self.role_dropdown.current(0)
+        self.role_dropdown.bind("<<ComboboxSelected>>", self.toggle_manager_key)
+        
+        # Manager Key field (default hidden)
+        self.manager_key_label = tb.Label(form_frame, text="Manager Key:", font=("Arial", 12), bootstyle="secondary")
+        self.manager_key_entry = tb.Entry(form_frame, font=("Arial", 12), bootstyle="dark", show="*")
+        
+        # Create the remaining entry fields using a helper
+        self.first_name_entry = self.create_label_entry(form_frame, "First Name:", row=1)
+        self.last_name_entry = self.create_label_entry(form_frame, "Last Name:", row=2)
+        self.phone_entry = self.create_label_entry(form_frame, "Phone Number:", row=3)
+        self.email_entry = self.create_label_entry(form_frame, "Email:", row=4)
+        self.password_entry = self.create_label_entry(form_frame, "Password:", row=5, show="*")
+        self.confirm_password_entry = self.create_label_entry(form_frame, "Confirm Password:", row=6, show="*")
+        
+        # Navigation Buttons
+        self.create_buttons(master, screens.welcome.WelcomeScreen, "Sign Up")
+    
+    def create_label_entry(self, parent, text, row, show=""):
+        """
+        Helper method to create a labeled entry in the given parent frame.
+        Uses grid layout with proper padding.
+        """
+        tb.Label(parent, text=text, font=("Arial", 12), bootstyle="secondary").grid(row=row, column=0, sticky="w", padx=5, pady=5)
+        entry = tb.Entry(parent, font=("Arial", 12), bootstyle="dark", show=show)
+        entry.grid(row=row, column=1, sticky="ew", padx=5, pady=5)
+        # Allow the entry to expand horizontally
+        parent.columnconfigure(1, weight=1)
+        return entry
+
+    def create_buttons(self, master, back_screen, confirm_text):
+        button_frame = tb.Frame(self, bootstyle="flatly")
+        button_frame.pack(pady=20)
+        
+        tb.Button(button_frame, text="Back", bootstyle="secondary-outline", 
+                  command=lambda: master.show_frame(back_screen)).pack(side="left", padx=10)
+        
+        tb.Button(button_frame, text=confirm_text, bootstyle="success", 
+                  command=self.sign_up).pack(side="left", padx=10)
+
+    def toggle_manager_key(self, event):
+        """
+        Show or hide the manager key entry field when the role is changed.
+        """
+        # Remove any existing manager key widgets first
+        self.manager_key_label.grid_forget()
+        self.manager_key_entry.grid_forget()
+
+        # If manager is selected, add manager key fields to row 0 after the role selection
+        if self.role_var.get() == "Manager":
+            # Place these fields in the same row for a seamless look or on a new row based on design preference
+            parent = self.manager_key_label.master
+            self.manager_key_label.grid(row=0, column=2, padx=10, pady=5, sticky="w")
+            self.manager_key_entry.grid(row=0, column=3, padx=5, pady=5, sticky="w")
+    
+    def sign_up(self):
+        """
+        Placeholder for sign-up logic. Here you would handle data validation,
+        password confirmation, and interaction with your database.
+        """
+        first_name = self.first_name_entry.get()
+        last_name = self.last_name_entry.get()
+        phone = self.phone_entry.get()
+        email = self.email_entry.get()
+        password = self.password_entry.get()
+        confirm_password = self.confirm_password_entry.get()
+        role = self.role_var.get()
+        manager_key = self.manager_key_entry.get() if role == "Manager" else None
+        
+        if not (first_name and last_name and phone and email and password and confirm_password):
+            tb.messagebox.showerror("Error", "Please fill in all required fields.")
+            return
+        
+        if password != confirm_password:
+            tb.messagebox.showerror("Error", "Passwords do not match.")
+            return
+        
+        # Here you might want to verify the manager key if necessary, and then hash the password.
+        hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
+        
+        # Implement sign-up functionality (e.g., insert into database)
+        tb.messagebox.showinfo("Success", "Account successfully created. Please login.")
+        # For now, we simply clear the fields or go back to the welcome screen.
