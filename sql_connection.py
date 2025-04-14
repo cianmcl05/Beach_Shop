@@ -23,18 +23,16 @@ def connect_db():
 
 
 # inserts users into database for signing up
-def insert_user(first_name, last_name, phone, email, password, role):
+def insert_user(first_name, last_name, phone, email, password, role, store_id):
     connection = connect_db()
     if connection:
         try:
             cursor = connection.cursor()
 
-            # Hash password (use actual hashing in production)
-            hashed_password = password
-
-            query = """INSERT INTO Employee (Name, Phone, Email, role, password) 
-                       VALUES (%s, %s, %s, %s, %s)"""
-            values = (f'{first_name} {last_name}', phone, email, role, hashed_password)
+            full_name = f'{first_name} {last_name}'
+            query = """INSERT INTO Employee (Name, Phone, Email, role, password, StoreID) 
+                       VALUES (%s, %s, %s, %s, %s, %s)"""
+            values = (full_name, phone, email, role, password, store_id)
 
             cursor.execute(query, values)
             connection.commit()
@@ -47,6 +45,7 @@ def insert_user(first_name, last_name, phone, email, password, role):
             connection.close()
     else:
         print("fail")
+
 
 
 def clock_in(emp_id):
@@ -303,5 +302,253 @@ def delete_invoice(invoice_number):
         finally:
             cursor.close()
             connection.close()
+
+def get_all_employees():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT Name, Phone, Email, Role, Email, Password FROM Employee")
+            return cursor.fetchall()
+        except Error as e:
+            print("Error fetching employees:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def get_all_employees_with_store():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            query = """
+                SELECT E.Name, E.Phone, E.Email, E.Role, S.Store_Name, E.Password
+                FROM Employee E
+                LEFT JOIN Store S ON E.StoreID = S.Store_ID
+            """
+            cursor.execute(query)
+            return cursor.fetchall()
+        except Error as e:
+            print("Error fetching employees:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def delete_employee(email):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM Employee WHERE Email = %s", (email,))
+            connection.commit()
+        except Error as e:
+            print("Error deleting employee:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def update_employee(email, name, phone, role, store_id, password):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            query = """
+                UPDATE Employee
+                SET Name=%s, Phone=%s, Role=%s, StoreID=%s, Password=%s
+                WHERE Email=%s
+            """
+            cursor.execute(query, (name, phone, role, store_id, password, email))
+            connection.commit()
+        except Error as e:
+            print("Error updating employee:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def get_all_stores():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT Store_ID, Store_Name FROM Store")
+            return cursor.fetchall()
+        except Error as e:
+            print("Error fetching stores:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def get_all_merchandise():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT M.ID, M.Merch_Type, M.Merch_Value, M.Purchase_Date, S.Store_Name
+                FROM Merchandise M
+                LEFT JOIN Store S ON M.StoreID = S.Store_ID
+            """)
+            return cursor.fetchall()
+        except Error as e:
+            print("Error fetching merchandise:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def insert_merchandise(merch_type, merch_value, purchase_date, store_id):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("""
+                INSERT INTO Merchandise (Merch_Type, Merch_Value, Purchase_Date, StoreID)
+                VALUES (%s, %s, %s, %s)
+            """, (merch_type, merch_value, purchase_date, store_id))
+            connection.commit()
+        except Error as e:
+            print("Error inserting merchandise:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def delete_merchandise(merch_id):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM Merchandise WHERE ID = %s", (merch_id,))
+            connection.commit()
+        except Error as e:
+            print("Error deleting merchandise:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def get_all_stores():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT Store_ID, Store_Name FROM Store")
+            return cursor.fetchall()
+        except Error as e:
+            print("Error fetching stores:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def insert_store(name, location):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            query = "INSERT INTO Store (Store_Name, Location) VALUES (%s, %s)"
+            cursor.execute(query, (name, location))
+            connection.commit()
+        except Error as e:
+            print("Error inserting store:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def get_all_stores():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT Store_ID, Store_Name FROM Store")
+            return cursor.fetchall()
+        except Error as e:
+            print("Error fetching stores:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def get_full_store_list():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT Store_ID, Store_Name, Location FROM Store")
+            return cursor.fetchall()
+        except Error as e:
+            print("Error getting store list:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def update_merchandise(merch_id, merch_type, merch_value, purchase_date, store_id):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            query = """UPDATE Merchandise
+                       SET Merch_Type = %s, Merch_Value = %s, Purchase_Date = %s, StoreID = %s
+                       WHERE ID = %s"""
+            cursor.execute(query, (merch_type, merch_value, purchase_date, store_id, merch_id))
+            connection.commit()
+        except Error as e:
+            print("Error updating merchandise:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def update_store(store_id, name, location):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("UPDATE Store SET Store_Name = %s, Location = %s WHERE Store_ID = %s",
+                           (name, location, store_id))
+            connection.commit()
+        except Error as e:
+            print("Error updating store:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def delete_store(store_id):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+
+            # Check if any employees, merchandise, or invoices reference this store
+            check_query = """
+                SELECT EXISTS (
+                    SELECT 1 FROM Employee WHERE StoreID = %s
+                    UNION
+                    SELECT 1 FROM Merchandise WHERE StoreID = %s
+                    UNION
+                    SELECT 1 FROM Invoice WHERE StoreID = %s
+                )
+            """
+            cursor.execute(check_query, (store_id, store_id, store_id))
+            in_use = cursor.fetchone()[0]
+
+            if in_use:
+                print(f"Store ID {store_id} is still in use and cannot be deleted.")
+                return "in_use"
+
+            cursor.execute("DELETE FROM Store WHERE Store_ID = %s", (store_id,))
+            connection.commit()
+            return "deleted"
+
+        except Error as e:
+            print("Error deleting store:", e)
+            return "error"
+        finally:
+            cursor.close()
+            connection.close()
+
+
+
 
 

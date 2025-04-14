@@ -1,8 +1,11 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
+from datetime import date
 import screens.manager_view
 import screens.owner_view
-import screens.emp_view  # Add this if you support employee view too
+import screens.emp_view
+from sql_connection import get_all_merchandise, insert_merchandise, delete_merchandise, get_all_stores, update_merchandise
+
 
 class MerchandiseInventoryScreen(tk.Frame):
     def __init__(self, master, user_role="manager"):
@@ -10,76 +13,179 @@ class MerchandiseInventoryScreen(tk.Frame):
         self.master = master
         self.user_role = user_role
 
-        # Header Label
-        self.header_label = tk.Label(self, text="Merchandise Inventory", font=("Arial", 16, "bold"), bg="#FFF4A3", fg="black")
+        self.store_map = {name: sid for sid, name in get_all_stores()}
+        self.reverse_store_map = {sid: name for name, sid in self.store_map.items()}
+
+        self.header_label = tk.Label(self, text="Merchandise Inventory", font=("Arial", 16, "bold"), bg="#FFF4A3")
         self.header_label.pack(pady=10)
 
-        # Buttons Frame
-        button_frame = tk.Frame(self, bg="#FFF4A3")
-        button_frame.pack()
+        self.button_frame = tk.Frame(self, bg="#FFF4A3")
+        self.button_frame.pack()
 
-        # Back button with dynamic logic
-        if self.user_role == "employee":
-            back_command = lambda: self.master.show_frame(screens.emp_view.EmployeeView)
-        elif self.user_role == "manager":
-            back_command = lambda: self.master.show_frame(screens.manager_view.ManagerView)
-        else:
-            back_command = lambda: self.master.show_frame(screens.owner_view.OwnerView)
+        back_command = self.get_back_command()
+        tk.Button(self.button_frame, text="Back", font=("Arial", 12, "bold"), width=10,
+                  bg="#B0F2C2", command=back_command).pack(side=tk.LEFT, padx=10)
 
-        self.back_button = tk.Button(button_frame, text="Back", font=("Arial", 12, "bold"), width=10, height=1,
-                                     bg="#B0F2C2", fg="black", relief="ridge", command=back_command)
-        self.back_button.pack(side=tk.LEFT, padx=10)
+        tk.Button(self.button_frame, text="Add", font=("Arial", 12, "bold"), width=10,
+                  bg="#EECFA3", command=self.show_add_form).pack(side=tk.LEFT, padx=10)
 
-        self.add_button = tk.Button(button_frame, text="Add", font=("Arial", 12, "bold"), width=10, height=1,
-                                    bg="#EECFA3", fg="black", relief="ridge", command=self.show_add_screen)
-        self.add_button.pack(side=tk.RIGHT, padx=10)
+        tk.Button(self.button_frame, text="Delete", font=("Arial", 12, "bold"), width=10,
+                  bg="#F2B6A0", command=self.delete_selected).pack(side=tk.LEFT, padx=10)
 
-        # Table Frame
-        self.table_frame = tk.Frame(self, bg="#FFF4A3", padx=5, pady=5)
+        # Filter Area
+        filter_frame = tk.Frame(self, bg="#FFF4A3")
+        filter_frame.pack(pady=5)
+
+        tk.Label(filter_frame, text="Filter by Store:", bg="#FFF4A3", font=("Arial", 11)).pack(side=tk.LEFT, padx=5)
+        self.filter_store_var = tk.StringVar()
+        self.store_filter_dropdown = ttk.Combobox(filter_frame, textvariable=self.filter_store_var, values=list(self.store_map.keys()), state="readonly", width=15)
+        self.store_filter_dropdown.pack(side=tk.LEFT, padx=5)
+
+        tk.Label(filter_frame, text="Date (YYYY-MM-DD):", bg="#FFF4A3", font=("Arial", 11)).pack(side=tk.LEFT, padx=5)
+        self.date_filter_entry = tk.Entry(filter_frame, font=("Arial", 11), width=15)
+        self.date_filter_entry.pack(side=tk.LEFT, padx=5)
+
+        tk.Button(filter_frame, text="Apply Filter", bg="#E58A2C", font=("Arial", 11, "bold"),
+                  command=self.apply_filter).pack(side=tk.LEFT, padx=5)
+        tk.Button(filter_frame, text="Reset", bg="#D9D9D9", font=("Arial", 11, "bold"),
+                  command=self.load_table).pack(side=tk.LEFT, padx=5)
+
+        # Table
+        self.table_frame = tk.Frame(self, bg="#FFF4A3")
         self.table_frame.pack(pady=10, fill="both", expand=True)
 
-        self.show_inventory_screen()
+        self.columns = ("ID", "Merch Type", "Value", "Purchase Date", "Store")
+        self.tree = ttk.Treeview(self.table_frame, columns=self.columns, show="headings")
+        for col in self.columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=120)
+        self.tree.pack()
 
-    def show_inventory_screen(self):
-        self.clear_screen()
-        self.header_label.config(text="Merchandise Inventory")
-        self.add_button.config(text="Add", command=self.show_add_screen)
+        self.tree.bind("<Double-1>", self.on_double_click)
+        self.load_table()
 
-        # Reset back button to original screen
+    def get_back_command(self):
         if self.user_role == "employee":
-            back_command = lambda: self.master.show_frame(screens.emp_view.EmployeeView)
+            return lambda: self.master.show_frame(screens.emp_view.EmployeeView)
         elif self.user_role == "manager":
-            back_command = lambda: self.master.show_frame(screens.manager_view.ManagerView)
+            return lambda: self.master.show_frame(screens.manager_view.ManagerView)
         else:
-            back_command = lambda: self.master.show_frame(screens.owner_view.OwnerView)
-        self.back_button.config(command=back_command)
+            return lambda: self.master.show_frame(screens.owner_view.OwnerView)
 
-        # Table Headers
-        columns = ["Date", "Day", "Merch Type", "Merch Value", "Total Merch"]
-        for i, col in enumerate(columns):
-            label = tk.Label(self.table_frame, text=col, font=("Arial", 10, "bold"), bg="#FFF4A3", borderwidth=1, relief="solid")
-            label.grid(row=0, column=i, padx=2, pady=2, sticky="nsew")
+    def load_table(self):
+        self.tree.delete(*self.tree.get_children())
+        for merch in get_all_merchandise():
+            self.tree.insert("", "end", values=merch)
 
-        # Table Rows (Empty for now)
-        for r in range(1, 6):
-            for c in range(5):
-                entry = tk.Entry(self.table_frame, font=("Arial", 10), borderwidth=1, relief="solid", width=13)
-                entry.grid(row=r, column=c, padx=2, pady=2, sticky="nsew")
+    def apply_filter(self):
+        store_name = self.filter_store_var.get()
+        date_str = self.date_filter_entry.get().strip()
 
-    def show_add_screen(self):
-        self.clear_screen()
-        self.header_label.config(text="Add Merchandise")
-        self.add_button.config(text="Confirm", command=self.show_inventory_screen)
-        self.back_button.config(command=self.show_inventory_screen)
+        filtered = []
+        for merch in get_all_merchandise():
+            merch_id, merch_type, merch_value, purchase_date, store = merch
 
-        tk.Label(self.table_frame, text="Merch Type:", font=("Arial", 12), bg="#FFF4A3").grid(row=0, column=0, padx=10, pady=5, sticky="w")
-        merch_type_entry = tk.Entry(self.table_frame, font=("Arial", 12), width=20)
-        merch_type_entry.grid(row=0, column=1, padx=10, pady=5, sticky="w")
+            if store_name and store != store_name:
+                continue
 
-        tk.Label(self.table_frame, text="Merch Value:", font=("Arial", 12), bg="#FFF4A3").grid(row=1, column=0, padx=10, pady=5, sticky="w")
-        merch_value_entry = tk.Entry(self.table_frame, font=("Arial", 12), width=20)
-        merch_value_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+            if date_str:
+                try:
+                    if str(purchase_date) != date_str:
+                        continue
+                except:
+                    continue
 
-    def clear_screen(self):
-        for widget in self.table_frame.winfo_children():
-            widget.destroy()
+            filtered.append(merch)
+
+        self.tree.delete(*self.tree.get_children())
+        for row in filtered:
+            self.tree.insert("", "end", values=row)
+
+    def show_add_form(self):
+        add_win = tk.Toplevel(self)
+        add_win.title("Add Merchandise")
+        add_win.configure(bg="#FFF4A3")
+
+        tk.Label(add_win, text="Merch Type:", bg="#FFF4A3", font=("Arial", 12)).pack(anchor="w", padx=20, pady=2)
+        merch_type_entry = tk.Entry(add_win, font=("Arial", 12))
+        merch_type_entry.pack(padx=20)
+
+        tk.Label(add_win, text="Merch Value:", bg="#FFF4A3", font=("Arial", 12)).pack(anchor="w", padx=20, pady=2)
+        merch_value_entry = tk.Entry(add_win, font=("Arial", 12))
+        merch_value_entry.pack(padx=20)
+
+        tk.Button(add_win, text="Confirm", font=("Arial", 12, "bold"), bg="#E58A2C", width=12,
+                  command=lambda: self.confirm_add(add_win, merch_type_entry.get(), merch_value_entry.get())).pack(pady=10)
+
+    def confirm_add(self, win, merch_type, merch_value):
+        try:
+            purchase_date = date.today()
+            store_id = self.master.current_store_id
+            merch_value = float(merch_value)
+
+            insert_merchandise(merch_type, merch_value, purchase_date, store_id)
+            self.load_table()
+            win.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not add merchandise: {e}")
+
+    def delete_selected(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showinfo("Delete", "Select a row to delete.")
+            return
+
+        merch_id = self.tree.item(selected[0], "values")[0]
+        confirm = messagebox.askyesno("Delete", f"Are you sure you want to delete item ID {merch_id}?")
+        if confirm:
+            delete_merchandise(merch_id)
+            self.tree.delete(selected[0])
+
+    def on_double_click(self, event):
+        selected = self.tree.selection()
+        if not selected:
+            return
+
+        values = self.tree.item(selected[0], "values")
+        merch_id, merch_type, merch_value, purchase_date, store_name = values
+
+        edit_win = tk.Toplevel(self)
+        edit_win.title("Edit Merchandise")
+        edit_win.configure(bg="#FFF4A3")
+
+        tk.Label(edit_win, text="Merch Type:", bg="#FFF4A3").pack()
+        merch_type_entry = tk.Entry(edit_win, font=("Arial", 12))
+        merch_type_entry.insert(0, merch_type)
+        merch_type_entry.pack()
+
+        tk.Label(edit_win, text="Merch Value:", bg="#FFF4A3").pack()
+        merch_value_entry = tk.Entry(edit_win, font=("Arial", 12))
+        merch_value_entry.insert(0, merch_value)
+        merch_value_entry.pack()
+
+        tk.Label(edit_win, text="Purchase Date (YYYY-MM-DD):", bg="#FFF4A3").pack()
+        date_entry = tk.Entry(edit_win, font=("Arial", 12))
+        date_entry.insert(0, purchase_date)
+        date_entry.pack()
+
+        tk.Label(edit_win, text="Store:", bg="#FFF4A3").pack()
+        store_var = tk.StringVar()
+        store_dropdown = ttk.Combobox(edit_win, textvariable=store_var, values=list(self.store_map.keys()), state="readonly")
+        store_dropdown.pack()
+        store_dropdown.set(store_name)
+
+        tk.Button(edit_win, text="Save Changes", bg="#E58A2C", font=("Arial", 12, "bold"),
+                  command=lambda: self.save_edit(edit_win, merch_id, merch_type_entry.get(),
+                                                 merch_value_entry.get(), date_entry.get(), store_var.get())).pack(pady=10)
+
+    def save_edit(self, win, merch_id, merch_type, merch_value, purchase_date, store_name):
+        try:
+            store_id = self.store_map[store_name]
+            update_merchandise(merch_id, merch_type, float(merch_value), purchase_date, store_id)
+            self.load_table()
+            win.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not update merchandise: {e}")
+
+
+
