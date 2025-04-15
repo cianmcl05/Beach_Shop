@@ -1,0 +1,90 @@
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+import screens.manager_view
+import screens.owner_view
+import screens.emp_view
+
+class MerchandiseInventoryScreen(tb.Frame):
+    def __init__(self, master, user_role="manager"):
+        super().__init__(master, bootstyle="flatly", padding=20)
+        self.master = master
+        self.user_role = user_role
+
+        # Header Label
+        self.header_label = tb.Label(self, text="Merchandise Inventory",
+                                     font=("Arial", 16, "bold"), bootstyle="info")
+        self.header_label.pack(pady=10, fill="x")
+
+        # Configure custom button style
+        style = tb.Style()
+        style.configure("Custom.TButton", font=("Arial", 12, "bold"))
+
+        # Buttons Frame
+        button_frame = tb.Frame(self, bootstyle="flatly")
+        button_frame.pack()
+
+        # Back button with dynamic logic
+        if self.user_role == "employee":
+            back_command = lambda: self.master.show_frame(screens.emp_view.EmployeeView)
+        elif self.user_role == "manager":
+            back_command = lambda: self.master.show_frame(screens.manager_view.ManagerView)
+        else:
+            back_command = lambda: self.master.show_frame(screens.owner_view.OwnerView)
+
+        self.back_button = tb.Button(button_frame, text="Back", style="Custom.TButton",
+                                     bootstyle="success", width=10, command=back_command)
+        self.back_button.pack(side=LEFT, padx=10)
+
+        self.add_button = tb.Button(button_frame, text="Add", style="Custom.TButton",
+                                    bootstyle="warning", width=10, command=self.show_add_screen)
+        self.add_button.pack(side=RIGHT, padx=10)
+
+        # Table Frame
+        self.table_frame = tb.Frame(self, bootstyle="flatly", padding=5)
+        self.table_frame.pack(pady=10, fill="both", expand=True)
+
+        self.show_inventory_screen()
+
+    def show_inventory_screen(self):
+        # Clear any widgets from table_frame
+        self.clear_screen()
+        self.header_label.config(text="Merchandise Inventory")
+        self.add_button.config(text="Add", command=self.show_add_screen)
+
+        # Reset back button to original screen based on user role
+        if self.user_role == "employee":
+            back_command = lambda: self.master.show_frame(screens.emp_view.EmployeeView)
+        elif self.user_role == "manager":
+            back_command = lambda: self.master.show_frame(screens.manager_view.ManagerView)
+        else:
+            back_command = lambda: self.master.show_frame(screens.owner_view.OwnerView)
+        self.back_button.config(command=back_command)
+
+        # Table Headers using grid layout
+        columns = ["Date", "Day", "Merch Type", "Merch Value", "Total Merch"]
+        for i, col in enumerate(columns):
+            label = tb.Label(self.table_frame, text=col, font=("Arial", 10, "bold"),
+                             bootstyle="secondary", borderwidth=1, relief="solid")
+            label.grid(row=0, column=i, padx=2, pady=2, sticky="nsew")
+            # Make the columns stretchable
+            self.table_frame.columnconfigure(i, weight=1)
+
+        # Table Rows (Empty for now)
+        for r in range(1, 6):
+            for c in range(len(columns)):
+                entry = tb.Entry(self.table_frame, font=("Arial", 10),
+                                 bootstyle="dark", borderwidth=1, width=13)
+                entry.grid(row=r, column=c, padx=2, pady=2, sticky="nsew")
+
+    def show_add_screen(self):
+        # Clear the table frame contents
+        self.clear_screen()
+        self.header_label.config(text="Add Merchandise")
+        self.add_button.config(text="Confirm", command=self.show_inventory_screen)
+        self.back_button.config(command=self.show_inventory_screen)
+
+        # Simple form using grid layout inside table_frame
+        tb.Label(self.table_frame, text="Merch Type:", font=("Arial", 12),
+                 bootstyle="secondary").grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        merch_type_entry = tb.Entry(self.table_frame, font=("Arial", 12), bootstyle="dark", width=20)
+
