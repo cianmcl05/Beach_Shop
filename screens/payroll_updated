@@ -1,0 +1,67 @@
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+from tkinter import ttk
+import screens.emp_view
+import screens.manager_view
+import screens.owner_view
+
+class PayrollScreen(tb.Frame):
+    def __init__(self, master, user_role):
+        super().__init__(master, bootstyle="flatly", padding=20)
+        self.user_role = user_role
+        self.master = master
+
+        # Configure a custom style for buttons
+        style = tb.Style()
+        style.configure("Custom.TButton", font=("Helvetica", 12, "bold"))
+
+        # Header
+        header = tb.Label(self, text="Payroll", font=("Helvetica", 16, "bold"),
+                          bootstyle="info", padding=(20, 5))
+        header.pack(pady=10, fill="x")
+
+        # Table Frame
+        self.table_frame = tb.Frame(self, bootstyle="flatly")
+        self.table_frame.pack(pady=10, fill="both", expand=True)
+
+        # Treeview (Table) using ttk Treeview widget
+        columns = ("Date", "Employee", "Pay Amount")
+        self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=120)
+        self.tree.pack(fill="both", expand=True)
+
+        # Buttons Frame
+        self.create_buttons()
+
+        # Add Payroll Entry Button (Placeholder)
+        self.add_payroll_button = tb.Button(self, text="Add Payroll Entry", style="Custom.TButton",
+                                             bootstyle="secondary", width=15,
+                                             command=self.add_payroll_entry)
+        self.add_payroll_button.pack(pady=10)
+
+    def create_buttons(self):
+        button_frame = tb.Frame(self, bootstyle="flatly")
+        button_frame.pack(pady=5)
+        # Determine back screen based on user role
+        if self.user_role == "employee":
+            back_command = lambda: self.master.show_frame(screens.emp_view.EmployeeView)
+        elif self.user_role == "manager":
+            back_command = lambda: self.master.show_frame(screens.manager_view.ManagerView)
+        else:
+            back_command = lambda: self.master.show_frame(screens.owner_view.OwnerView)
+
+        tb.Button(button_frame, text="Back", style="Custom.TButton", bootstyle="success",
+                  width=10, command=back_command).pack(side="left", padx=10)
+
+        tb.Button(button_frame, text="Save", style="Custom.TButton", bootstyle="warning",
+                  width=10, command=self.save_data).pack(side="left", padx=10)
+
+    def add_payroll_entry(self):
+        # Placeholder for functionality to add a new payroll entry.
+        print("Add Payroll Entry button clicked.")
+
+    def save_data(self):
+        # Placeholder for saving payroll data.
+        print("Data saved!")
