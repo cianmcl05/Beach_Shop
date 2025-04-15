@@ -213,9 +213,9 @@ def insert_expense(expense_type, value, payment_method_binary, emp_id=None, stor
         cursor = connection.cursor()
         today = date.today()
 
-        # Assign cash/credit value based on binary method
-        cash = 1 if payment_method_binary == 0 else 0.00
-        credit = 1 if payment_method_binary == 1 else 0.00
+        # Store actual value in correct payment method
+        cash = value if payment_method_binary == 0 else 0.00
+        credit = value if payment_method_binary == 1 else 0.00
 
         insert_query = """
             INSERT INTO Expenses (Type, Value, Date, EmpID, Tax, Cash, Credit, StoreID)
@@ -233,6 +233,46 @@ def insert_expense(expense_type, value, payment_method_binary, emp_id=None, stor
     finally:
         cursor.close()
         connection.close()
+
+
+def update_expense(expense_id, expense_type, value, payment_method_binary):
+    connection = connect_db()
+    if not connection:
+        return False
+    try:
+        cursor = connection.cursor()
+        cash = 1 if payment_method_binary == 0 else 0.00
+        credit = 1 if payment_method_binary == 1 else 0.00
+
+        query = """
+        UPDATE Expenses
+        SET Type = %s, Value = %s, Cash = %s, Credit = %s
+        WHERE ID = %s
+        """
+        cursor.execute(query, (expense_type, value, cash, credit, expense_id))
+        connection.commit()
+        return True
+    except Exception as e:
+        print("Error updating expense:", e)
+        return False
+    finally:
+        cursor.close()
+        connection.close()
+
+def delete_expense(expense_id):
+    connection = connect_db()
+    if not connection:
+        return
+    try:
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM Expenses WHERE ID = %s", (expense_id,))
+        connection.commit()
+    except Exception as e:
+        print("Error deleting expense:", e)
+    finally:
+        cursor.close()
+        connection.close()
+
 
 def get_all_invoices():
     connection = connect_db()
@@ -548,7 +588,235 @@ def delete_store(store_id):
             cursor.close()
             connection.close()
 
+def get_all_employees():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT ID, Name FROM Employee")
+            return cursor.fetchall()
+        except:
+            return []
+        finally:
+            cursor.close()
+            connection.close()
 
+def get_all_payroll():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            query = """
+                SELECT Payroll.ID, Payroll.Date, Employee.Name, Payroll.Payroll
+                FROM Payroll
+                JOIN Employee ON Payroll.EmpID = Employee.ID
+                ORDER BY Payroll.Date DESC
+            """
+            cursor.execute(query)
+            return cursor.fetchall()
+        except:
+            return []
+        finally:
+            cursor.close()
+            connection.close()
 
+def insert_payroll(pay_date, emp_id, amount):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute(
+                "INSERT INTO Payroll (Date, EmpID, Payroll) VALUES (%s, %s, %s)",
+                (pay_date, emp_id, amount)
+            )
+            connection.commit()
+        except Exception as e:
+            print("Payroll insert error:", e)
+        finally:
+            cursor.close()
+            connection.close()
+def update_payroll(payroll_id, emp_id, amount):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            query = "UPDATE Payroll SET EmpID = %s, Payroll = %s WHERE ID = %s"
+            cursor.execute(query, (emp_id, amount, payroll_id))
+            connection.commit()
+        except Exception as e:
+            print("Error updating payroll:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def delete_payroll(payroll_id):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM Payroll WHERE ID = %s", (payroll_id,))
+            connection.commit()
+        except Exception as e:
+            print("Error deleting payroll:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+def get_store_expense_summary(store_id):
+    connection = connect_db()
+    if not connection:
+        return None
+    try:
+        cursor = connection.cursor()
+        query = """
+            SELECT
+                SUM(Value) AS Total,
+                SUM(Cash) AS TotalCash,
+                SUM(Credit) AS TotalCredit
+            FROM Expenses
+            WHERE StoreID = %s
+        """
+        cursor.execute(query, (store_id,))
+        return cursor.fetchone()  # returns (Total, TotalCash, TotalCredit)
+    except Exception as e:
+        print("Error fetching expense summary:", e)
+        return None
+    finally:
+        cursor.close()
+        connection.close()
+
+def get_employee_weekly_gross_summary(start_date, end_date):
+    connection = connect_db()
+    if not connection:
+        return []
+
+    try:
+        cursor = connection.cursor()
+        query = """
+            SELECT e.Name, SUM(et.Register_Out - et.Register_In) AS WeeklySales, e.ID
+            FROM Employee_Time et
+            JOIN Employee e ON et.EmpID = e.ID
+            WHERE DATE(et.ClockIn) BETWEEN %s AND %s
+            GROUP BY e.ID
+        """
+        cursor.execute(query, (start_date, end_date))
+        return cursor.fetchall()  # List of tuples: (Name, Gross, EmpID)
+    except Exception as e:
+        print("Error getting weekly gross summary:", e)
+        return []
+    finally:
+        cursor.close()
+        connection.close()
+
+def get_all_employee_names():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT ID, Name FROM Employee")
+            return cursor.fetchall()  # Returns list of (ID, Name)
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def get_all_bonuses():
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT Employee.Name, Bonus.Sales, Bonus.Gross, Bonus.Bonus_Percentage, Bonus.Bonus_Amount
+                FROM Bonus
+                JOIN Employee ON Bonus.EmpID = Employee.ID
+            """)
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def insert_bonus(emp_id, bonus_amount, sales, gross, bonus_pct):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            insert_query = """
+                INSERT INTO Bonus (EmpID, Bonus_Amount, Sales, Gross, Bonus_Percentage, Current_Bonus_Percentage)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(insert_query, (emp_id, bonus_amount, sales, gross, bonus_pct, bonus_pct))
+            connection.commit()
+            print("Bonus inserted successfully.")
+        except Exception as e:
+            print("Error inserting bonus:", e)
+        finally:
+            cursor.close()
+            connection.close()
+def get_all_bonuses(include_id=False):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            if include_id:
+                query = """
+                    SELECT BonusID, Employee.Name, Sales, Gross, Bonus_Percentage, Bonus_Amount
+                    FROM Bonus
+                    JOIN Employee ON Bonus.EmpID = Employee.ID
+                    ORDER BY BonusID DESC
+                """
+            else:
+                query = """
+                    SELECT Employee.Name, Sales, Gross, Bonus_Percentage, Bonus_Amount
+                    FROM Bonus
+                    JOIN Employee ON Bonus.EmpID = Employee.ID
+                    ORDER BY BonusID DESC
+                """
+            cursor.execute(query)
+            return cursor.fetchall()
+        except Exception as e:
+            print("Error fetching bonuses:", e)
+            return []
+        finally:
+            cursor.close()
+            connection.close()
+    return []
+
+def delete_bonus(bonus_id):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM Bonus WHERE BonusID = %s", (bonus_id,))
+            connection.commit()
+            return True
+        except Exception as e:
+            print("Error deleting bonus:", e)
+            return False
+        finally:
+            cursor.close()
+            connection.close()
+
+def get_bonus_history_for_employee(emp_id):
+    connection = connect_db()
+    if not connection:
+        return []
+
+    try:
+        cursor = connection.cursor()
+        query = """
+            SELECT CreatedAt, Sales, Gross, Bonus_Percentage, Bonus_Amount
+            FROM Bonus
+            WHERE EmpID = %s
+            ORDER BY CreatedAt DESC
+        """
+        cursor.execute(query, (emp_id,))
+        return cursor.fetchall()
+    except Exception as e:
+        print("Error fetching bonus history:", e)
+        return []
+    finally:
+        cursor.close()
+        connection.close()
 
 
