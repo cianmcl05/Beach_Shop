@@ -1,0 +1,245 @@
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+from tkinter import ttk
+from datetime import datetime
+import screens.manager_view
+import screens.owner_view
+import screens.emp_view
+from sql_connection import get_all_invoices, insert_invoice
+
+class InvoicesScreen(tb.Frame):
+    def __init__(self, master, user_role):
+        super().__init__(master, bootstyle="flatly", padding=20)
+        self.user_role = user_role
+
+        # Configure a custom style for buttons
+        style = tb.Style()
+        style.configure("Custom.TButton", font=("Helvetica", 12, "bold"))
+
+        # Header
+        header = tb.Label(self, text="Invoices", font=("Helvetica", 16, "bold"),
+                          bootstyle="info", padding=(20, 5))
+        header.pack(pady=10, fill="x")
+
+        # Table Frame
+        self.table_frame = tb.Frame(self, bootstyle="flatly")
+        self.table_frame.pack(pady=10, fill="both", expand=True)
+
+        # Treeview (Table) using ttk Treeview
+        columns = ("Invoice#", "Company", "Amount", "Paid?", "Due", "Status", "Payment Type")
+        self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=120)
+        self.tree.pack(fill="both", expand=True)
+        self.tree.bind("<Double-1>", self.open_edit_window)
+
+        self.load_invoices()
+        self.create_buttons(master)
+
+        # Add Invoice Button
+        self.add_invoice_button = tb.Button(self, text="Add Invoice", style="Custom.TButton",
+                                             bootstyle="secondary", width=15,
+                                             command=self.open_add_invoice_window)
+        self.add_invoice_button.pack(pady=5)
+
+        # Delete Invoice Button
+        self.delete_invoice_button = tb.Button(self, text="Delete Invoice", style="Custom.TButton",
+                                                bootstyle="danger", width=15,
+                                                command=self.delete_selected_invoice)
+        self.delete_invoice_button.pack(pady=5)
+
+    def create_buttons(self, master):
+        button_frame = tb.Frame(self, bootstyle="flatly")
+        button_frame.pack(pady=5)
+
+        if self.user_role == "manager":
+            back_command = lambda: master.show_frame(screens.manager_view.ManagerView)
+        else:
+            back_command = lambda: master.show_frame(screens.owner_view.OwnerView)
+
+        tb.Button(button_frame, text="Back", style="Custom.TButton", bootstyle="success",
+                  width=10, command=back_command).pack(side="left", padx=10)
+
+        tb.Button(button_frame, text="Save", style="Custom.TButton", bootstyle="warning",
+                  width=10, command=self.save_data).pack(side="left", padx=10)
+
+    def load_invoices(self):
+        records = get_all_invoices()
+        for row in records:
+            display_row = list(row)
+            # Convert payment status based on "paid"
+            display_row[3] = "Yes" if row[3] == "paid" else "No"
+            self.tree.insert("", "end", values=display_row)
+
+    def open_add_invoice_window(self):
+        add_window = tb.Toplevel(self, bootstyle="flatly", padding=20)
+        add_window.title("Add Invoice")
+
+        self.invoice_number_entry = self.create_label_entry(add_window, "Invoice #:")
+        self.company_entry = self.create_label_entry(add_window, "Company:")
+        self.amount_entry = self.create_label_entry(add_window, "Amount:")
+        self.due_date_entry = self.create_label_entry(add_window, "Due Date (YYYY-MM-DD):")
+
+        self.payment_status_var = tb.StringVar()
+        self.company_status_var = tb.StringVar()
+        self.payment_type_var = tb.StringVar()
+
+        self.create_dropdowns(add_window)
+        self.create_add_invoice_buttons(add_window)
+
+    def create_dropdowns(self, parent):
+        # Payment Status Dropdown
+        tb.Label(parent, text="Payment Status:", font=("Helvetica", 12),
+                 bootstyle="secondary").pack(anchor="w", padx=20, pady=5)
+        payment_status_combo = ttk.Combobox(parent, textvariable=self.payment_status_var,
+                                            state="readonly", font=("Helvetica", 12), width=28)
+        payment_status_combo['values'] = ["paid", "not"]
+        payment_status_combo.pack(anchor="w", padx=20, pady=5)
+        self.payment_status_var.set("not")
+
+        # Company Status Dropdown
+        tb.Label(parent, text="Company Status:", font=("Helvetica", 12),
+                 bootstyle="secondary").pack(anchor="w", padx=20, pady=5)
+        company_status_combo = ttk.Combobox(parent, textvariable=self.company_status_var,
+                                            state="readonly", font=("Helvetica", 12), width=28)
+        company_status_combo['values'] = ["Active", "Closed", "Vendor", "Client"]
+        company_status_combo.pack(anchor="w", padx=20, pady=5)
+        self.company_status_var.set("Active")
+
+        # Payment Type Dropdown
+        tb.Label(parent, text="Payment Type:", font=("Helvetica", 12),
+                 bootstyle="secondary").pack(anchor="w", padx=20, pady=5)
+        payment_type_combo = ttk.Combobox(parent, textvariable=self.payment_type_var,
+                                          state="readonly", font=("Helvetica", 12), width=28)
+        payment_type_combo['values'] = ["check", "cash", "card", "withdrawal"]
+        payment_type_combo.pack(anchor="w", padx=20, pady=5)
+        self.payment_type_var.set("check")
+
+    def create_label_entry(self, parent, text):
+        tb.Label(parent, text=text, font=("Helvetica", 12),
+                 bootstyle="secondary").pack(anchor="w", padx=20, pady=5)
+        entry = tb.Entry(parent, font=("Helvetica", 12), bootstyle="dark", width=30)
+        entry.pack(anchor="w", padx=20, pady=5)
+        return entry
+
+    def create_add_invoice_buttons(self, add_window):
+        button_frame = tb.Frame(add_window, bootstyle="flatly")
+        button_frame.pack(pady=10)
+
+        tb.Button(button_frame, text="Back", style="Custom.TButton", bootstyle="success",
+                  width=10, command=add_window.destroy).pack(side="left", padx=10)
+
+        tb.Button(button_frame, text="Confirm", style="Custom.TButton", bootstyle="warning",
+                  width=10, command=lambda: self.confirm_add(add_window)).pack(side="left", padx=10)
+
+    def confirm_add(self, window):
+        try:
+            invoice_number = self.invoice_number_entry.get()
+            company = self.company_entry.get()
+            amount = float(self.amount_entry.get())
+            due_date = datetime.strptime(self.due_date_entry.get(), "%Y-%m-%d").date()
+
+            insert_invoice(invoice_number, company, amount,
+                           self.payment_status_var.get(), due_date,
+                           self.company_status_var.get(), self.payment_type_var.get())
+
+            self.tree.insert("", "end", values=(
+                invoice_number, company, amount,
+                "Yes" if self.payment_status_var.get() == "paid" else "No",
+                due_date, self.company_status_var.get(), self.payment_type_var.get()
+            ))
+            window.destroy()
+        except Exception as e:
+            print("Error adding invoice:", e)
+
+    def open_edit_window(self, event):
+        selected = self.tree.selection()
+        if not selected:
+            return
+
+        values = self.tree.item(selected[0], "values")
+        edit_win = tb.Toplevel(self, bootstyle="flatly", padding=20)
+        edit_win.title("Edit Invoice")
+
+        self.edit_invoice_number = self.create_label_entry(edit_win, "Invoice #:")
+        self.edit_invoice_number.insert(0, values[0])
+        self.edit_invoice_number.config(state='disabled')
+
+        self.edit_company = self.create_label_entry(edit_win, "Company:")
+        self.edit_company.insert(0, values[1])
+
+        self.edit_amount = self.create_label_entry(edit_win, "Amount:")
+        self.edit_amount.insert(0, values[2])
+
+        self.edit_due_date = self.create_label_entry(edit_win, "Due Date (YYYY-MM-DD):")
+        self.edit_due_date.insert(0, values[4])
+
+        # Dropdown variables for editing
+        self.edit_payment_status = tb.StringVar(value="paid" if values[3] == "Yes" else "not")
+        self.edit_company_status = tb.StringVar(value=values[5])
+        self.edit_payment_type = tb.StringVar(value=values[6])
+
+        # Payment Status Dropdown
+        tb.Label(edit_win, text="Payment Status:", font=("Helvetica", 12),
+                 bootstyle="secondary").pack(anchor="w", padx=20, pady=5)
+        status_combo = ttk.Combobox(edit_win, textvariable=self.edit_payment_status,
+                                    state="readonly", font=("Helvetica", 12), width=28)
+        status_combo['values'] = ["paid", "not"]
+        status_combo.pack(anchor="w", padx=20, pady=5)
+
+        # Company Status Dropdown
+        tb.Label(edit_win, text="Company Status:", font=("Helvetica", 12),
+                 bootstyle="secondary").pack(anchor="w", padx=20, pady=5)
+        comp_status_combo = ttk.Combobox(edit_win, textvariable=self.edit_company_status,
+                                         state="readonly", font=("Helvetica", 12), width=28)
+        comp_status_combo['values'] = ["Active", "Closed", "Vendor", "Client"]
+        comp_status_combo.pack(anchor="w", padx=20, pady=5)
+
+        # Payment Type Dropdown
+        tb.Label(edit_win, text="Payment Type:", font=("Helvetica", 12),
+                 bootstyle="secondary").pack(anchor="w", padx=20, pady=5)
+        pay_type_combo = ttk.Combobox(edit_win, textvariable=self.edit_payment_type,
+                                      state="readonly", font=("Helvetica", 12), width=28)
+        pay_type_combo['values'] = ["check", "cash", "card", "withdrawal"]
+        pay_type_combo.pack(anchor="w", padx=20, pady=5)
+
+        tb.Button(edit_win, text="Update", style="Custom.TButton", bootstyle="warning",
+                  width=10, command=lambda: self.confirm_edit(values[0], selected[0], edit_win))\
+          .pack(pady=10)
+
+    def confirm_edit(self, invoice_number, item_id, window):
+        try:
+            from sql_connection import update_invoice
+            update_invoice(
+                invoice_number=invoice_number,
+                company=self.edit_company.get(),
+                amount=float(self.edit_amount.get()),
+                payment_status=self.edit_payment_status.get(),
+                due_date=datetime.strptime(self.edit_due_date.get(), "%Y-%m-%d").date(),
+                company_status=self.edit_company_status.get(),
+                payment_type=self.edit_payment_type.get()
+            )
+
+            self.tree.item(item_id, values=(
+                invoice_number, self.edit_company.get(), self.edit_amount.get(),
+                "Yes" if self.edit_payment_status.get() == "paid" else "No",
+                self.edit_due_date.get(),
+                self.edit_company_status.get(),
+                self.edit_payment_type.get()
+            ))
+            window.destroy()
+        except Exception as e:
+            print("Error updating invoice:", e)
+
+    def delete_selected_invoice(self):
+        selected = self.tree.selection()
+        if not selected:
+            return
+        from sql_connection import delete_invoice
+        invoice_number = self.tree.item(selected[0], "values")[0]
+        delete_invoice(invoice_number)
+        self.tree.delete(selected[0])
+
+    def save_data(self):
+        print("Data saved!")  # Placeholder
