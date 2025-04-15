@@ -68,10 +68,19 @@ class EndOfDaySalesScreen(tk.Frame):
             messagebox.showerror("Invalid Input", "Please enter valid decimal numbers.")
             return
 
+        # Check that Reg == Credit + Cash
+        if round(reg, 2) != round(credit + cash_in_envelope, 2):
+            messagebox.showerror("Mismatch", "Reg must equal Credit + Cash in Envelope.")
+            return
+
         from sql_connection import insert_end_of_day_sales
         success = insert_end_of_day_sales(reg, credit, cash_in_envelope, self.emp_id)
 
         if success:
             messagebox.showinfo("Sales Recorded", "End of day sales recorded successfully!")
+            self.reg_entry.delete(0, tk.END)
+            self.credit_entry.delete(0, tk.END)
+            self.cash_in_envelope_entry.delete(0, tk.END)
         else:
             messagebox.showerror("Error", "Failed to save sales record.")
+
