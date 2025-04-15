@@ -1,0 +1,123 @@
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+import screens.welcome
+import screens.end_of_day
+import screens.expenses
+import sql_connection
+from tkinter import messagebox
+from datetime import datetime
+
+class EmployeeView(tb.Frame):
+    def __init__(self, master, emp_id=None):
+        super().__init__(master, bootstyle="flatly", padding=20)
+        self.emp_id = emp_id
+        self.clocked_in = False
+        self.current_record_id = None
+
+        # Configure custom style for buttons
+        style = tb.Style()
+        style.configure("Custom.TButton", font=("Arial", 12, "bold"))
+
+        # Header
+        header = tb.Label(self, text="Employee View", font=("Arial", 20, "bold"),
+                          bootstyle="info")
+        header.grid(row=0, column=0, columnspan=2, pady=10)
+
+        # Create a container for left and right sections
+        left_frame = tb.Frame(self, bootstyle="flatly")
+        left_frame.grid(row=1, column=0, sticky="n", padx=10, pady=10)
+        right_frame = tb.Frame(self, bootstyle="flatly")
+        right_frame.grid(row=1, column=1, sticky="n", padx=10, pady=10)
+
+        # Left Frame Widgets
+        # Clock button
+        self.clock_button = tb.Button(left_frame, text="Clock in",
+                                      style="Custom.TButton", bootstyle="secondary",
+                                      width=15, command=self.toggle_clock)
+        self.clock_button.pack(pady=5)
+
+        # Check clock status from database
+        latest = sql_connection.get_latest_time_record(self.emp_id)
+        if latest and latest["clock_in"].date() == datetime.now().date() and latest["clock_in"] == latest["clock_out"]:
+            self.clocked_in = True
+            self.current_record_id = latest["id"]
+            self.clock_button.config(text="Clock out")
+        else:
+            self.clocked_in = False
+            self.current_record_id = None
+            self.clock_button.config(text="Clock in")
+
+        # End of Day Sales Button
+        tb.Button(left_frame, text="End of Day Sales",
+                  style="Custom.TButton", bootstyle="warning", width=15,
+                  command=lambda: master.show_frame(screens.end_of_day.EndOfDaySalesScreen,
+                                                      user_role="employee", emp_id=self.emp_id)
+                  ).pack(pady=5)
+
+        # Log Expenses Button
+        tb.Button(left_frame, text="Log Expenses",
+                  style="Custom.TButton", bootstyle="warning", width=15,
+                  command=lambda: master.show_frame(screens.expenses.Expenses,
+                                                      user_role="employee", emp_id=self.emp_id)
+                  ).pack(pady=5)
+
+        # Log Out Button at the bottom of left_frame
+        tb.Button(left_frame, text="Log out",
+                  style="Custom.TButton", bootstyle="secondary", width=12,
+                  command=lambda: master.show_frame(screens.welcome.WelcomeScreen)
+                  ).pack(pady=20)
+
+        # Right Frame Widgets
+        label_style = {"font": ("Arial", 12, "bold"), "bootstyle": "secondary"}
+        entry_style = {"font": ("Arial", 12), "bootstyle": "dark", "width": 20}
+
+        tb.Label(right_frame, text="Reg $ in:", **label_style).grid(row=0, column=0, sticky="w", pady=5, padx=5)
+        self.reg_in_entry = tb.Entry(right_frame, **entry_style)
+        self.reg_in_entry.grid(row=0, column=1, sticky="w", pady=5, padx=5)
+
+        tb.Label(right_frame, text="Reg $ out:", **label_style).grid(row=1, column=0, sticky="w", pady=5, padx=5)
+        self.reg_out_entry = tb.Entry(right_frame, **entry_style)
+        self.reg_out_entry.grid(row=1, column=1, sticky="w", pady=5, padx=5)
+
+        tb.Button(right_frame, text="Confirm", style="Custom.TButton",
+                  bootstyle="secondary", width=12,
+                  command=self.confirm_register_amounts
+                  ).grid(row=2, column=1, sticky="w", pady=10, padx=5)
+
+    def toggle_clock(self):
+        if not self.clocked_in:
+            record_id = sql_connection.clock_in(self.emp_id)
+            if record_id:
+                self.current_record_id = record_id
+                self.clock_button.config(text="Clock out")
+                self.clocked_in = True
+            else:
+                messagebox.showinfo("Clock In", "You have already clocked out for the day.")
+        else:
+            confirm = messagebox.askyesno("Confirm Clock Out", "Are you sure you want to clock out?")
+            if confirm and self.current_record_id:
+                sql_connection.clock_out(self.current_record_id)
+                self.clock_button.config(text="Clock in")
+                self.clocked_in = False
+                self.current_record_id = None
+
+    def confirm_register_amounts(self):
+        try:
+            reg_in_str = self.reg_in_entry.get()
+            reg_out_str = self.reg_out_entry.get()
+
+            reg_in = float(reg_in_str) if reg_in_str else 0.00
+            reg_out = float(reg_out_str) if reg_out_str else 0.00
+        except ValueError:
+            messagebox.showerror("Invalid Input", "Please enter valid decimal numbers for register in and out.")
+            return
+
+        if not self.current_record_id:
+            messagebox.showwarning("Not Clocked In", "You need to be clocked in to save register amounts.")
+            return
+
+        success = sql_connection.update_register_amounts(self.current_record_id, reg_in, reg_out)
+        if success:
+            messagebox.showinfo("Success", "Register amounts saved.")
+        else:
+            messagebox.showerror("Error", "Failed to update register amounts.")
