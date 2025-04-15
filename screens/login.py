@@ -20,6 +20,7 @@ class LoginScreen(tb.Frame):
 
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Background image not found at: {image_path}")
+<<<<<<< Updated upstream
 
         bg_image = Image.open(image_path)
         screen_width = master.winfo_screenwidth()
@@ -64,10 +65,73 @@ class LoginScreen(tb.Frame):
         tb.Button(button_frame, text="Confirm", command=lambda: self.login(master, confirm_screen)).pack(side="left", padx=10)
 
     def login(self, master, confirm_screen):
+=======
+
+        bg_image = Image.open(image_path)
+        screen_width = master.winfo_screenwidth()
+        screen_height = master.winfo_screenheight()
+        bg_image = bg_image.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        self.bg_image = ImageTk.PhotoImage(bg_image)
+
+        self.bg_label = tb.Label(self, image=self.bg_image)
+        self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # ✅ Form frame
+        self.form_frame = tb.Frame(self, padding=20)
+        self.form_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        ttk = tb  # alias
+
+        ttk.Label(self.form_frame, text="Welcome back", font=("Arial", 16, "bold")).grid(row=0, column=0, columnspan=2, pady=(0, 10))
+
+        # Email and password
+        ttk.Label(self.form_frame, text="Email:", font=("Arial", 12)).grid(row=1, column=0, sticky="e", padx=10, pady=5)
+        self.email_entry = tb.Entry(self.form_frame, font=("Arial", 12))
+        self.email_entry.grid(row=1, column=1, sticky="w", pady=5)
+
+        ttk.Label(self.form_frame, text="Password:", font=("Arial", 12)).grid(row=2, column=0, sticky="e", padx=10, pady=5)
+        self.password_entry = tb.Entry(self.form_frame, font=("Arial", 12), show="*")
+        self.password_entry.grid(row=2, column=1, sticky="w", pady=5)
+
+        # Forgot password
+        tb.Label(self.form_frame, text="Forgot User/Password?", font=("Arial", 10, "italic"),
+                 foreground="black", cursor="hand2").grid(row=3, column=0, columnspan=2, sticky="w", padx=10, pady=(0, 10))
+
+        # Store selection
+        ttk.Label(self.form_frame, text="Select Store", font=("Arial", 12)).grid(row=4, column=0, sticky="e", padx=10, pady=5)
+        self.store_var = tb.StringVar()
+        self.store_dropdown = tb.Combobox(self.form_frame, font=("Arial", 12), textvariable=self.store_var, state="readonly")
+        self.store_dropdown.grid(row=4, column=1, sticky="w", pady=5)
+
+        # Load stores from DB
+        try:
+            self.store_map = {name: sid for sid, name, _ in get_full_store_list()}
+            self.store_dropdown['values'] = list(self.store_map.keys())
+            if self.store_map:
+                self.store_dropdown.current(0)
+        except Exception as e:
+            print(f"Error loading stores: {e}")
+            self.store_map = {}
+
+        # Buttons
+        self.create_buttons(master, screens.welcome.WelcomeScreen)
+
+    def create_buttons(self, master, back_screen):
+        button_frame = tb.Frame(self.form_frame)
+        button_frame.grid(row=5, column=0, columnspan=2, pady=15)
+
+        tb.Button(button_frame, text="Back", width=12,
+                  command=lambda: master.show_frame(back_screen)).pack(side="left", padx=10)
+        tb.Button(button_frame, text="Confirm", width=12,
+                  command=lambda: self.login(master)).pack(side="left", padx=10)
+
+    def login(self, master):
+>>>>>>> Stashed changes
         email = self.email_entry.get()
         password = self.password_entry.get()
 
         user_role = self.authenticate_user(email, password)
+<<<<<<< Updated upstream
 
         if user_role:
             self.email_entry.delete(0, "end")
@@ -83,6 +147,26 @@ class LoginScreen(tb.Frame):
                 master.show_frame(screens.manager_view.ManagerView)
             elif user_role == "owner":
                 master.show_frame(screens.owner_view.OwnerView)
+=======
+        if user_role:
+            self.email_entry.delete(0, "end")
+            self.password_entry.delete(0, "end")
+
+            master.user_role = user_role
+            master.emp_id = self.emp_id
+            master.current_store_id = self.store_map[selected_store]
+
+            messagebox.showinfo("Login Success", f"Welcome back, {user_role.capitalize()}!")
+
+            master.reset_frames_after_login()
+
+            if user_role == "employee":
+                master.show_frame(screens.emp_view.EmployeeView, emp_id=self.emp_id)
+            elif user_role == "manager":
+                master.show_frame(screens.manager_view.ManagerView, emp_id=self.emp_id)
+            elif user_role == "owner":
+                master.show_frame(screens.owner_view.OwnerView, emp_id=self.emp_id)
+>>>>>>> Stashed changes
         else:
             messagebox.showerror("Login Failed", "Invalid email or password.")
 
@@ -112,6 +196,7 @@ class LoginScreen(tb.Frame):
 
 
 
+<<<<<<< Updated upstream
 
 
 
@@ -125,3 +210,5 @@ class LoginScreen(tb.Frame):
 
 
 
+=======
+>>>>>>> Stashed changes
