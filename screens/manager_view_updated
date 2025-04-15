@@ -1,0 +1,65 @@
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+import screens.welcome
+import screens.end_of_day  # EndOfDaySalesScreen
+import screens.expenses      # Expenses Screen
+import screens.bonus         # Bonus Screen
+import screens.invoices
+import screens.employee_table  # EmployeesScreen
+import screens.merch         # MerchandiseInventoryScreen
+import screens.payroll       # PayrollScreen
+
+class ManagerView(tb.Frame):
+    def __init__(self, master, emp_id=None):
+        super().__init__(master, bootstyle="flatly", padding=20)
+        self.emp_id = emp_id
+
+        # Header
+        header = tb.Label(self, text="Manager View", font=("Arial", 20, "bold"),
+                          bootstyle="info")
+        header.pack(pady=10, fill="x")
+
+        # Configure a custom style for buttons
+        style = tb.Style()
+        style.configure("Custom.TButton", font=("Arial", 12, "bold"))
+
+        # Container frame for buttons using grid layout
+        buttons_frame = tb.Frame(self, bootstyle="flatly")
+        buttons_frame.pack(pady=20)
+
+        # Define buttons arranged in a grid with two columns
+        # Column 0: "Employees", "Merchandise", "Pay"
+        # Column 1: "End of Day Sales", "Bonus", "Invoices", "Add Expense"
+        tb.Button(buttons_frame, text="Employees", style="Custom.TButton", bootstyle="secondary",
+                  width=15, command=lambda: master.show_frame(screens.employee_table.EmployeesScreen, user_role="manager")
+                  ).grid(row=0, column=0, padx=10, pady=5)
+
+        tb.Button(buttons_frame, text="End of Day Sales", style="Custom.TButton", bootstyle="secondary",
+                  width=15, command=lambda: master.show_frame(screens.end_of_day.EndOfDaySalesScreen,
+                                                                user_role="manager", emp_id=self.emp_id)
+                  ).grid(row=0, column=1, padx=10, pady=5)
+
+        tb.Button(buttons_frame, text="Merchandise", style="Custom.TButton", bootstyle="secondary",
+                  width=15, command=lambda: master.show_frame(screens.merch.MerchandiseInventoryScreen, user_role="manager")
+                  ).grid(row=1, column=0, padx=10, pady=5)
+
+        tb.Button(buttons_frame, text="Bonus", style="Custom.TButton", bootstyle="secondary",
+                  width=15, command=lambda: master.show_frame(screens.bonus.Bonus, user_role="manager")
+                  ).grid(row=1, column=1, padx=10, pady=5)
+
+        tb.Button(buttons_frame, text="Pay", style="Custom.TButton", bootstyle="secondary",
+                  width=15, command=lambda: master.show_frame(screens.payroll.PayrollScreen, user_role="manager")
+                  ).grid(row=2, column=0, padx=10, pady=5)
+
+        tb.Button(buttons_frame, text="Invoices", style="Custom.TButton", bootstyle="secondary",
+                  width=15, command=lambda: master.show_frame(screens.invoices.InvoicesScreen, user_role="manager")
+                  ).grid(row=2, column=1, padx=10, pady=5)
+
+        tb.Button(buttons_frame, text="Add Expense", style="Custom.TButton", bootstyle="secondary",
+                  width=15, command=lambda: master.show_frame(screens.expenses.Expenses, user_role="manager", emp_id=self.emp_id)
+                  ).grid(row=3, column=1, padx=10, pady=5)
+
+        # Logout Button centered below the grid
+        tb.Button(self, text="Log out", style="Custom.TButton", bootstyle="success",
+                  width=12, command=lambda: master.show_frame(screens.welcome.WelcomeScreen)
+                  ).pack(pady=20)
