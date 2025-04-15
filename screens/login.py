@@ -1,54 +1,68 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+from tkinter import messagebox
+from PIL import Image, ImageTk
 import screens.welcome
 import screens.emp_view
 import screens.manager_view
 import screens.owner_view
-from sql_connection import connect_db  # Importing the database connection function
+from sql_connection import connect_db
 import hashlib
+import os
 
-class LoginScreen(tk.Frame):
+class LoginScreen(tb.Frame):
     def __init__(self, master):
-        super().__init__(master, bg="#FFF4A3")
+        super().__init__(master)
 
-        tk.Label(self, text="Welcome back", font=("Arial", 16, "bold"), bg="#FFF4A3", fg="black").pack(pady=10)
+        # ✅ Load background image
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        image_path = os.path.join(base_dir, "City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg")
 
-        # Create Entry fields for Email and Password
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Background image not found at: {image_path}")
+
+        bg_image = Image.open(image_path)
+        screen_width = master.winfo_screenwidth()
+        screen_height = master.winfo_screenheight()
+        bg_image = bg_image.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        self.bg_image = ImageTk.PhotoImage(bg_image)
+
+        self.bg_label = tb.Label(self, image=self.bg_image)
+        self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        self.form_frame = tb.Frame(self, padding=20)
+        self.form_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        ttk = tb
+
+        ttk.Label(self.form_frame, text="Welcome back", font=("Arial", 16, "bold")).pack(pady=10)
         self.email_entry = self.create_label_entry("Email:")
         self.password_entry = self.create_label_entry("Password:", show="*")
 
-        tk.Label(self, text="Forgot User/Password?", font=("Arial", 10, "italic"),
-                 fg="gray", bg="#FFF4A3", cursor="hand2").pack(anchor="w", padx=20, pady=5)
+        tb.Label(self.form_frame, text="Forgot User/Password?", font=("Arial", 10, "italic"),
+                 foreground="black", cursor="hand2").pack(anchor="w", padx=20, pady=5)
 
-        # Store Dropdown
-        tk.Label(self, text="Select Store", font=("Arial", 12, "bold"), bg="#FFF4A3").pack(anchor="w", padx=20, pady=(10, 0))
-        store_dropdown = ttk.Combobox(self, values=["Store 1", "Store 2", "Store 3"], font=("Arial", 12))
-        store_dropdown.pack(anchor="w", padx=20)
-        store_dropdown.current(0)
+        ttk.Label(self.form_frame, text="Select Store", font=("Arial", 12)).pack(anchor="w", padx=20, pady=(10, 0))
+        self.store_dropdown = ttk.Combobox(self.form_frame, values=["Store 1", "Store 2", "Store 3"],
+                                           font=("Arial", 12), state="readonly")  # 👈 read-only dropdown
+        self.store_dropdown.pack(anchor="w", padx=20)
+        self.store_dropdown.current(0)
 
         self.create_buttons(master, screens.welcome.WelcomeScreen, screens.emp_view.EmployeeView)
 
-    # input fields
     def create_label_entry(self, text, show=""):
-        tk.Label(self, text=text, font=("Arial", 12), bg="#FFF4A3").pack(anchor="w", padx=20)
-        entry = tk.Entry(self, font=("Arial", 12), show=show)
-        entry.pack(anchor="w", padx=20)
+        tb.Label(self.form_frame, text=text, font=("Arial", 12)).pack(anchor="w", padx=20)
+        entry = tb.Entry(self.form_frame, show=show, font=("Arial", 12))
+        entry.pack(anchor="w", padx=20, pady=(0, 5))
         return entry
 
-    # back and confirm buttons
     def create_buttons(self, master, back_screen, confirm_screen):
-        button_frame = tk.Frame(self, bg="#FFF4A3")
+        button_frame = tb.Frame(self.form_frame)
         button_frame.pack(pady=10)
 
-        tk.Button(button_frame, text="Back", font=("Arial", 12, "bold"), width=10, height=1,
-                  bg="#B0F2C2", fg="black", relief="ridge",
-                  command=lambda: master.show_frame(back_screen)).pack(side="left", padx=10)
+        tb.Button(button_frame, text="Back", command=lambda: master.show_frame(back_screen)).pack(side="left", padx=10)
+        tb.Button(button_frame, text="Confirm", command=lambda: self.login(master, confirm_screen)).pack(side="left", padx=10)
 
-        tk.Button(button_frame, text="Confirm", font=("Arial", 12, "bold"), width=10, height=1,
-                  bg="#EECFA3", fg="black", relief="ridge",
-                  command=lambda: self.login(master, confirm_screen)).pack(side="left", padx=10)
-
-    # used to identify user and log them in
     def login(self, master, confirm_screen):
         email = self.email_entry.get()
         password = self.password_entry.get()
@@ -56,16 +70,12 @@ class LoginScreen(tk.Frame):
         user_role = self.authenticate_user(email, password)
 
         if user_role:
-            self.email_entry.delete(0, tk.END)
-            self.password_entry.delete(0, tk.END)
+            self.email_entry.delete(0, "end")
+            self.password_entry.delete(0, "end")
 
             messagebox.showinfo("Login Success", f"Welcome back, {user_role}!")
-
-            # Store the user role in the main app class
             master.user_role = user_role
-            print(master.user_role)
 
-            # Reset frames and show the correct screen based on the user role
             master.reset_frames_after_login()
             if user_role == "employee":
                 master.show_frame(screens.emp_view.EmployeeView, emp_id=self.emp_id)
@@ -76,11 +86,10 @@ class LoginScreen(tk.Frame):
         else:
             messagebox.showerror("Login Failed", "Invalid email or password.")
 
-    # checks if credentials are in the database
     def authenticate_user(self, email, password):
         hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
-
         connection = connect_db()
+
         if connection:
             try:
                 cursor = connection.cursor()
@@ -89,14 +98,30 @@ class LoginScreen(tk.Frame):
                 result = cursor.fetchone()
                 if result:
                     emp_id, role = result
-                    self.emp_id = emp_id  # Save emp_id in this class
+                    self.emp_id = emp_id
                     return role.lower()
             except Exception as e:
                 print(f"Database error: {e}")
-                return None
             finally:
                 cursor.close()
                 connection.close()
         return None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
