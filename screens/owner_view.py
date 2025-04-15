@@ -9,7 +9,7 @@ import screens.merch
 import screens.payroll
 import screens.withdraw
 import screens.store_management
-
+import screens.summary
 
 class OwnerView(tk.Frame):
     def __init__(self, master, emp_id=None):
@@ -25,8 +25,9 @@ class OwnerView(tk.Frame):
             ("Employees", 50, 80),
             ("Merchandise", 50, 130),
             ("Pay", 50, 180),
-            ("Manage Stores", 50, 230),  # 👈 moved below Pay
+            ("Manage Stores", 50, 230),
             ("Withdraw", 50, 280),
+            ("Summary", 50, 330),
             ("End of Day Sales", 250, 80),
             ("Bonus", 250, 130),
             ("Invoices", 250, 180),
@@ -61,8 +62,10 @@ class OwnerView(tk.Frame):
             elif text == "Manage Stores":
                 tk.Button(self, text=text, **button_style,
                           command=lambda: master.show_frame(screens.store_management.StoreManagementScreen)).place(x=x, y=y)
+            elif text == "Summary":
+                tk.Button(self, text=text, **button_style,
+                          command=lambda: master.show_frame(screens.summary.SummaryScreen, user_role="owner")).place(x=x, y=y)
 
         tk.Button(self, text="Log out", font=("Arial", 12, "bold"), width=12, height=1,
                   bg="#B0F2C2", fg="black", relief="ridge",
-                  command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).place(x=150, y=330)
-
+                  command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).place(x=150, y=390)

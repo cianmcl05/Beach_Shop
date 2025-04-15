@@ -1,7 +1,7 @@
 import mysql.connector
 from mysql.connector import Error
 from datetime import datetime, date
-
+from decimal import Decimal
 
 
 # connects to sql database
@@ -819,4 +819,276 @@ def get_bonus_history_for_employee(emp_id):
         cursor.close()
         connection.close()
 
+def get_summary_data(month, year):
+    connection = connect_db()
+    if not connection:
+        return None
+
+    try:
+        cursor = connection.cursor()
+
+        # Set date range for the given month
+        start_date = date(year, month, 1)
+        if month == 12:
+            end_date = date(year + 1, 1, 1)
+        else:
+            end_date = date(year, month + 1, 1)
+
+        # Opening Balance: pull from previous month net profit if exists
+        cursor.execute("""
+            SELECT Net_Profit FROM Summary_Balance 
+            WHERE Month = %s AND Year = %s
+        """, (month - 1 if month > 1 else 12, year if month > 1 else year - 1))
+        opening_balance = cursor.fetchone()
+        opening_balance = opening_balance[0] if opening_balance else Decimal("0.00")
+
+        # Total End of Day Reg (Cash), Credit
+        cursor.execute("""
+            SELECT COALESCE(SUM(Reg), 0), COALESCE(SUM(Credit), 0)
+            FROM End_of_Day_Sales
+            WHERE Date >= %s AND Date < %s
+        """, (start_date, end_date))
+        total_cash, total_credit = cursor.fetchone()
+
+        # Total Expenses
+        cursor.execute("""
+            SELECT COALESCE(SUM(Value), 0)
+            FROM Expenses
+            WHERE Date >= %s AND Date < %s
+        """, (start_date, end_date))
+        total_expenses = cursor.fetchone()[0]
+
+        # Total Merchandise
+        cursor.execute("""
+            SELECT COALESCE(SUM(Merch_Value), 0)
+            FROM Merchandise
+            WHERE Purchase_Date >= %s AND Purchase_Date < %s
+        """, (start_date, end_date))
+        total_merch = cursor.fetchone()[0]
+
+        # Total Payroll
+        cursor.execute("""
+            SELECT COALESCE(SUM(Payroll), 0)
+            FROM Payroll
+            WHERE Date >= %s AND Date < %s
+        """, (start_date, end_date))
+        total_payroll = cursor.fetchone()[0]
+
+        # Total Withdrawals
+        cursor.execute("""
+            SELECT COALESCE(SUM(Amount), 0)
+            FROM Withdrawals
+            WHERE Date >= %s AND Date < %s
+        """, (start_date, end_date))
+        total_withdrawals = cursor.fetchone()[0]
+
+        # Net Profit = sales - expenses - merch - payroll
+        net_profit = total_cash + total_credit - total_expenses - total_merch - total_payroll
+
+        # Current Balance = opening + net - withdrawals
+        current_balance = opening_balance + net_profit - total_withdrawals
+
+        # Actual Cash = cash - payroll
+        actual_cash = total_cash - total_payroll
+
+        # Actual Credit = credit - merch - expenses
+        actual_credit = total_credit - total_merch - total_expenses
+
+        # Actual Total = cash + credit
+        actual_total = actual_cash + actual_credit
+
+        # Sales tax report: credit + (cash * 0.2), rounded to nearest 5
+        sales_tax = total_credit + (total_cash * Decimal("0.2"))
+        sales_tax = round(sales_tax / Decimal("5.0")) * Decimal("5.0")
+
+        return {
+            "net_profit": net_profit,
+            "opening_balance": opening_balance,
+            "current_balance": current_balance,
+            "withdrawals": total_withdrawals,
+            "actual_cash": actual_cash,
+            "actual_credit": actual_credit,
+            "actual_total": actual_total,
+            "sales_tax": sales_tax
+        }
+
+    except Error as e:
+        print("Summary error:", e)
+        return None
+    finally:
+        cursor.close()
+        connection.close()
+
+def generate_summary_report(year, month):
+    summary = get_summary_data(month, year)
+    if not summary:
+        return None
+
+    # Save result to persistent summary table
+    try:
+        connection = connect_db()
+        if not connection:
+            return None
+
+        cursor = connection.cursor()
+
+        insert_query = """
+            INSERT INTO Summary_Balance (Month, Year, Opening_Balance, Net_Profit, Current_Balance)
+            VALUES (%s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE 
+                Opening_Balance = VALUES(Opening_Balance),
+                Net_Profit = VALUES(Net_Profit),
+                Current_Balance = VALUES(Current_Balance)
+        """
+        cursor.execute(insert_query, (
+            month,
+            year,
+            summary["opening_balance"],
+            summary["net_profit"],
+            summary["current_balance"]
+        ))
+        connection.commit()
+        return summary
+
+    except Exception as e:
+        print("Error generating summary report:", e)
+        return None
+    finally:
+        cursor.close()
+        connection.close()
+
+from datetime import datetime
+from decimal import Decimal
+
+def insert_withdrawal(amount, owner_name):
+    connection = connect_db()
+    if not connection:
+        return False
+
+    try:
+        cursor = connection.cursor()
+        today = datetime.now().date()
+        query = """
+            INSERT INTO Withdrawals (Date, Amount, OwnerName)
+            VALUES (%s, %s, %s)
+        """
+        cursor.execute(query, (today, amount, owner_name))
+        connection.commit()
+        return True
+    except Exception as e:
+        print("Error inserting withdrawal:", e)
+        return False
+    finally:
+        cursor.close()
+        connection.close()
+
+def get_all_withdrawals():
+    connection = connect_db()
+    withdrawals = []
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT Date, Amount, OwnerName FROM Withdrawals ORDER BY Date DESC")
+            withdrawals = cursor.fetchall()
+        except Exception as e:
+            print("Error fetching withdrawals:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return withdrawals
+
+def get_current_available_balance():
+    today = datetime.today()
+    month, year = today.month, today.year
+
+    connection = connect_db()
+    if not connection:
+        return Decimal("0.00")
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+            SELECT Current_Balance
+            FROM Summary_Balance
+            WHERE Month = %s AND Year = %s
+        """, (month, year))
+        result = cursor.fetchone()
+        return result[0] if result else Decimal("0.00")
+    except Exception as e:
+        print("Error fetching available balance:", e)
+        return Decimal("0.00")
+    finally:
+        cursor.close()
+        connection.close()
+
+def get_current_user_name(emp_id):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("SELECT Name FROM Employee WHERE ID = %s", (emp_id,))
+            result = cursor.fetchone()
+            return result[0] if result else "Unknown"
+        except Exception as e:
+            print("Error fetching user name:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return "Unknown"
+
+def insert_withdrawal(amount, owner_name):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            today = datetime.now().date()
+
+            # Insert the withdrawal
+            insert_query = "INSERT INTO Withdrawals (Date, Amount, OwnerName) VALUES (%s, %s, %s)"
+            cursor.execute(insert_query, (today, amount, owner_name))
+
+            # Get current month/year
+            month = today.month
+            year = today.year
+
+            # Update the summary table by subtracting the withdrawal from current balance
+            update_query = """
+                UPDATE Summary_Balance
+                SET Current_Balance = Current_Balance - %s
+                WHERE Month = %s AND Year = %s
+            """
+            cursor.execute(update_query, (amount, month, year))
+
+            connection.commit()
+            return True
+        except Exception as e:
+            print("Error inserting withdrawal:", e)
+            return False
+        finally:
+            cursor.close()
+            connection.close()
+    return False
+
+def get_current_balance():
+    connection = connect_db()
+    if not connection:
+        return 0.00
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""
+            SELECT Current_Balance
+            FROM Summary_Balance
+            ORDER BY Year DESC, Month DESC
+            LIMIT 1
+        """)
+        result = cursor.fetchone()
+        return float(result[0]) if result else 0.00
+
+    except Exception as e:
+        print("Error fetching current balance:", e)
+        return 0.00
+    finally:
+        cursor.close()
+        connection.close()
 

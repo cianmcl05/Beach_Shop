@@ -17,7 +17,6 @@ class Bonus(tk.Frame):
                  bg="#d9d6f2", padx=20, pady=5, relief="raised").pack(pady=10)
 
 
-
         self.table_frame = tk.Frame(self, bg="#FFF4A3")
         self.table_frame.pack(pady=10)
 

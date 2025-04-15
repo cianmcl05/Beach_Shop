@@ -1,82 +1,90 @@
 import tkinter as tk
-from tkinter import ttk
-import screens.emp_view
-import screens.manager_view
+from tkinter import ttk, messagebox
+from datetime import datetime
+import sql_connection
 import screens.owner_view
-
 
 class Withdraw(tk.Frame):
     def __init__(self, master):
         super().__init__(master, bg="#FFF4A3")
+        self.master = master
 
         # Header
-        title = tk.Label(self, text="Withdraw", font=("Helvetica", 16, "bold"), bg="#d9d6f2", padx=20, pady=5, relief="raised")
-        title.pack(pady=10)
+        tk.Label(self, text="Withdrawals", font=("Helvetica", 16, "bold"), bg="#d9d6f2", padx=20, pady=5, relief="raised").pack(pady=10)
 
-        # Table Frame
+        # Available Amount
+        balance = sql_connection.get_current_available_balance()
+        self.available_label = tk.Label(self, text=f"Available Balance: ${balance:.2f}", font=("Helvetica", 12, "bold"), bg="#FFF4A3")
+        self.available_label.pack(pady=5)
+
+        # Table
         self.table_frame = tk.Frame(self, bg="#FFF4A3")
         self.table_frame.pack(pady=10)
 
-        # Treeview (Table)
-        columns = ("Date", "Amount Withdrew", "Owner Name")
+        columns = ("Date", "Amount", "Owner")
         self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100)
+            self.tree.column(col, width=150)
         self.tree.pack()
 
         # Buttons
-        self.create_buttons(master)
+        self.create_buttons()
 
-        # Add Withdraw Button
-        self.add_withdraw_button = tk.Button(self, text="Withdraw", font=("Helvetica", 12, "bold"), width=15, height=1, bg="#CFCFCF",
-                                            command=self.open_add_withdraw_window)
-        self.add_withdraw_button.pack(pady=5)
+        tk.Button(self, text="Withdraw", font=("Helvetica", 12, "bold"), width=15, bg="#CFCFCF", command=self.open_add_withdraw_window).pack(pady=5)
 
-    def create_buttons(self, master):
+        self.load_data()
+
+    def create_buttons(self):
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack(pady=5)
-        back_command = lambda: master.show_frame(screens.owner_view.OwnerView)
 
-        tk.Button(button_frame, text="Back", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#A4E4A0",
-                  fg="black", relief="ridge", command=back_command).pack(side="left", padx=10)
+        tk.Button(button_frame, text="Back", font=("Helvetica", 12, "bold"), width=10, bg="#A4E4A0",
+                  command=lambda: self.master.show_frame(screens.owner_view.OwnerView)).pack(side="left", padx=10)
 
-        # Save Button
-        tk.Button(button_frame, text="Save", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#E58A2C",
-                  fg="black", relief="ridge", command=self.save_data).pack(side="left", padx=10)
+    def load_data(self):
+        self.tree.delete(*self.tree.get_children())
+        rows = sql_connection.get_all_withdrawals()
+        for date, amount, owner in rows:
+            self.tree.insert("", "end", values=(date.strftime("%Y-%m-%d"), f"${amount:.2f}", owner))
+
+        balance = sql_connection.get_current_available_balance()
+        self.available_label.config(text=f"Available Balance: ${balance:.2f}")
 
     def open_add_withdraw_window(self):
         add_window = tk.Toplevel(self)
         add_window.title("Withdraw")
         add_window.configure(bg="#FFF4A3")
 
-        # Form Labels & Entry Fields
-        self.value_entry = self.create_label_entry(add_window, "Amount:")
+        tk.Label(add_window, text="Amount:", font=("Helvetica", 12), bg="#FFF4A3").pack(anchor="w", padx=20, pady=5)
+        amount_entry = tk.Entry(add_window, font=("Helvetica", 12), width=30)
+        amount_entry.pack(anchor="w", padx=20, pady=5)
 
-        # Buttons
-        self.create_add_withdraw_buttons(add_window)
+        tk.Button(add_window, text="Confirm", font=("Helvetica", 12, "bold"), bg="#E58A2C",
+                  command=lambda: self.confirm_add(add_window, amount_entry)).pack(pady=10)
 
-    def create_label_entry(self, parent, text, show=""):
-        tk.Label(parent, text=text, font=("Helvetica", 12), bg="#FFF4A3").pack(anchor="w", padx=20)
-        entry = tk.Entry(parent, font=("Helvetica", 12), show=show, width=30)
-        entry.pack(anchor="w", padx=20, pady=5)
-        return entry
+    def confirm_add(self, window, entry):
+        try:
+            amount = float(entry.get())
+            if amount <= 0:
+                messagebox.showwarning("Invalid", "Enter a valid amount.")
+                return
 
-    def create_add_withdraw_buttons(self, add_window):
-        button_frame = tk.Frame(add_window, bg="#FFF4A3")
-        button_frame.pack(pady=10)
+            current_balance = sql_connection.get_current_available_balance()
+            if amount > current_balance:
+                messagebox.showwarning("Insufficient Funds", "You can't withdraw more than the available balance.")
+                return
 
-        # Back Button
-        tk.Button(button_frame, text="Back", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#A4E4A0",
-                  fg="black", relief="ridge", command=add_window.destroy).pack(side="left", padx=10)
+            owner_name = sql_connection.get_current_user_name(self.master.emp_id)
+            success = sql_connection.insert_withdrawal(amount, owner_name)
 
-        # Confirm Button
-        tk.Button(button_frame, text="Confirm", font=("Helvetica", 12, "bold"), width=10, height=1, bg="#E58A2C",
-                  fg="black", relief="ridge", command=lambda: self.confirm_add(add_window)).pack(side="left", padx=10)
+            if success:
+                self.load_data()
+                messagebox.showinfo("Success", f"${amount:.2f} withdrawn successfully.")
+                window.destroy()
+            else:
+                messagebox.showerror("Error", "Could not process withdrawal.")
 
-    def confirm_add(self, window):
-        self.tree.insert("", "end", values=(self.value_entry.get(), "N/A"))
-        window.destroy()
+        except ValueError:
+            messagebox.showerror("Invalid Input", "Please enter a valid number.")
 
-    def save_data(self):
-        print("Data saved!")  # Placeholder for actual save functionality
