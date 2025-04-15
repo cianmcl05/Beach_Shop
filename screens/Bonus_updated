@@ -1,0 +1,111 @@
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+import tkinter as tk
+from tkinter import ttk
+import screens.manager_view
+import screens.owner_view
+
+class Bonus(tb.Frame):
+    def __init__(self, master, user_role):
+        super().__init__(master, bootstyle="flatly", padding=20)
+        self.user_role = user_role  # Set user role
+
+        # Create a style instance and configure a custom style for buttons
+        style = tb.Style()
+        style.configure("Custom.TButton", font=("Helvetica", 12, "bold"))
+        
+        # Header
+        header = tb.Label(self, text="Bonus", font=("Helvetica", 16, "bold"),
+                          bootstyle="info", padding=(20, 5))
+        header.pack(pady=10, fill="x")
+
+        # Table Frame
+        self.table_frame = tb.Frame(self, bootstyle="flatly")
+        self.table_frame.pack(pady=10, fill="both", expand=True)
+
+        # Treeview (Table)
+        columns = ("Employee", "Sales", "Gross", "Bonus %", "Bonus Amount")
+        self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=120)
+        self.tree.pack(fill="both", expand=True)
+
+        # Buttons
+        self.create_buttons(master)
+
+        # Add Bonus Button
+        self.add_bonus_button = tb.Button(self, text="Add Bonus", style="Custom.TButton",
+                                           bootstyle="secondary", width=15,
+                                           command=self.open_add_bonus_window)
+        self.add_bonus_button.pack(pady=5)
+
+    def create_buttons(self, master):
+        button_frame = tb.Frame(self, bootstyle="flatly")
+        button_frame.pack(pady=5)
+
+        # Set Back command based on user role
+        if self.user_role == "manager":
+            back_command = lambda: master.show_frame(screens.manager_view.ManagerView)
+        else:
+            back_command = lambda: master.show_frame(screens.owner_view.OwnerView)
+
+        # Back Button using custom style
+        tb.Button(button_frame, text="Back", style="Custom.TButton", bootstyle="success",
+                  width=10, command=back_command).pack(side="left", padx=10)
+
+        # Save Button using custom style
+        tb.Button(button_frame, text="Save", style="Custom.TButton", bootstyle="warning",
+                  width=10, command=self.save_data).pack(side="left", padx=10)
+
+    def open_add_bonus_window(self):
+        add_window = tb.Toplevel(self, bootstyle="flatly", padding=20)
+        add_window.title("Add Bonus")
+        
+        # Create entry fields using a helper method
+        self.employee_entry = self.create_label_entry(add_window, "Employee:")
+        self.sales_entry = self.create_label_entry(add_window, "Sales:")
+        self.gross_entry = self.create_label_entry(add_window, "Gross:")
+        self.bonus_percent_entry = self.create_label_entry(add_window, "Bonus %:")
+
+        bonus_amount_label = tb.Label(add_window, text="Bonus Amount:", font=("Helvetica", 12),
+                                      bootstyle="secondary")
+        bonus_amount_label.pack(anchor="w", padx=20, pady=5)
+
+        self.create_add_bonus_buttons(add_window)
+
+    def create_label_entry(self, parent, text, show=""):
+        tb.Label(parent, text=text, font=("Helvetica", 12), bootstyle="secondary").pack(
+            anchor="w", padx=20, pady=5)
+        entry = tb.Entry(parent, font=("Helvetica", 12), bootstyle="dark", show=show, width=30)
+        entry.pack(anchor="w", padx=20, pady=5)
+        return entry
+
+    def create_add_bonus_buttons(self, add_window):
+        button_frame = tb.Frame(add_window, bootstyle="flatly")
+        button_frame.pack(pady=10)
+        
+        tb.Button(button_frame, text="Back", style="Custom.TButton", bootstyle="success",
+                  width=10, command=add_window.destroy).pack(side="left", padx=10)
+        
+        tb.Button(button_frame, text="Confirm", style="Custom.TButton", bootstyle="warning",
+                  width=10, command=lambda: self.confirm_add(add_window)).pack(side="left", padx=10)
+
+    def confirm_add(self, window):
+        try:
+            sales = float(self.sales_entry.get())
+            bonus_percent = float(self.bonus_percent_entry.get())
+        except ValueError:
+            tb.messagebox.showerror("Error", "Please enter valid numbers for Sales and Bonus %")
+            return
+
+        bonus_amount = (sales * bonus_percent) / 100
+        self.tree.insert("", "end", values=(self.employee_entry.get(),
+                                            self.sales_entry.get(),
+                                            self.gross_entry.get(),
+                                            self.bonus_percent_entry.get(),
+                                            f"${bonus_amount:.2f}"))
+        window.destroy()
+
+    def save_data(self):
+        print("Data saved!")  # Placeholder for actual data-saving logic
