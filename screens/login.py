@@ -2,10 +2,16 @@ import ttkbootstrap as tb
 from ttkbootstrap.constants import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
+<<<<<<< Updated upstream
+=======
+import os
+import hashlib
+>>>>>>> Stashed changes
 import screens.welcome
 import screens.emp_view
 import screens.manager_view
 import screens.owner_view
+<<<<<<< Updated upstream
 from sql_connection import connect_db
 import hashlib
 import os
@@ -13,10 +19,39 @@ import os
 class LoginScreen(tb.Frame):
     def __init__(self, master):
         super().__init__(master)
+=======
+from sql_connection import connect_db, get_full_store_list
+
+
+class LoginScreen(tb.Frame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.master = master
+>>>>>>> Stashed changes
 
         # ✅ Load background image
         base_dir = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(base_dir, "City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg")
+<<<<<<< Updated upstream
+=======
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Background image not found at: {image_path}")
+
+        bg_image = Image.open(image_path)
+        screen_width = master.winfo_screenwidth()
+        screen_height = master.winfo_screenheight()
+        bg_image = bg_image.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        self.bg_image = ImageTk.PhotoImage(bg_image)
+
+        self.bg_label = tb.Label(self, image=self.bg_image)
+        self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # ✅ Form frame
+        self.form_frame = tb.Frame(self, padding=20, bootstyle="light")
+        self.form_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        tb.Label(self.form_frame, text="Welcome back", font=("Arial", 16, "bold")).pack(pady=10)
+>>>>>>> Stashed changes
 
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Background image not found at: {image_path}")
@@ -40,15 +75,35 @@ class LoginScreen(tb.Frame):
         self.email_entry = self.create_label_entry("Email:")
         self.password_entry = self.create_label_entry("Password:", show="*")
 
+<<<<<<< Updated upstream
         tb.Label(self.form_frame, text="Forgot User/Password?", font=("Arial", 10, "italic"),
                  foreground="black", cursor="hand2").pack(anchor="w", padx=20, pady=5)
 
         ttk.Label(self.form_frame, text="Select Store", font=("Arial", 12)).pack(anchor="w", padx=20, pady=(10, 0))
         self.store_dropdown = ttk.Combobox(self.form_frame, values=["Store 1", "Store 2", "Store 3"],
                                            font=("Arial", 12), state="readonly")  # 👈 read-only dropdown
+=======
+        # Forgot text
+        tb.Label(self.form_frame, text="Forgot User/Password?", font=("Arial", 10, "italic"),
+                 foreground="black", cursor="hand2").pack(anchor="w", padx=20, pady=5)
+
+        # ✅ Store dropdown from database
+        tb.Label(self.form_frame, text="Select Store", font=("Arial", 12)).pack(anchor="w", padx=20, pady=(10, 0))
+
+        try:
+            self.store_map = {name: sid for sid, name, _ in get_full_store_list()}
+        except Exception as e:
+            self.store_map = {}
+            print(f"Error loading stores: {e}")
+
+        self.store_var = tb.StringVar()
+        self.store_dropdown = tb.Combobox(self.form_frame, values=list(self.store_map.keys()), font=("Arial", 12),
+                                          textvariable=self.store_var, state="readonly")
+>>>>>>> Stashed changes
         self.store_dropdown.pack(anchor="w", padx=20)
         self.store_dropdown.current(0)
 
+<<<<<<< Updated upstream
         self.create_buttons(master, screens.welcome.WelcomeScreen, screens.emp_view.EmployeeView)
 
     def create_label_entry(self, text, show=""):
@@ -66,6 +121,28 @@ class LoginScreen(tb.Frame):
 
     def login(self, master, confirm_screen):
 =======
+=======
+        if self.store_map:
+            self.store_dropdown.current(0)
+
+        self.create_buttons()
+
+    def create_label_entry(self, text, show=""):
+        tb.Label(self.form_frame, text=text, font=("Arial", 12)).pack(anchor="w", padx=20)
+        entry = tb.Entry(self.form_frame, font=("Arial", 12), show=show)
+        entry.pack(anchor="w", padx=20, pady=(0, 5))
+        return entry
+
+    def create_buttons(self):
+        button_frame = tb.Frame(self.form_frame)
+        button_frame.pack(pady=10)
+
+        tb.Button(button_frame, text="Back", bootstyle="success-outline", width=10,
+                  command=lambda: self.master.show_frame(screens.welcome.WelcomeScreen)).pack(side="left", padx=10)
+
+        tb.Button(button_frame, text="Confirm", bootstyle="primary-outline", width=10,
+                  command=self.login).pack(side="left", padx=10)
+>>>>>>> Stashed changes
 
         bg_image = Image.open(image_path)
         screen_width = master.winfo_screenwidth()
@@ -132,6 +209,7 @@ class LoginScreen(tb.Frame):
 
         user_role = self.authenticate_user(email, password)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
         if user_role:
             self.email_entry.delete(0, "end")
@@ -159,6 +237,18 @@ class LoginScreen(tb.Frame):
             messagebox.showinfo("Login Success", f"Welcome back, {user_role.capitalize()}!")
 
             master.reset_frames_after_login()
+=======
+        if user_role:
+            self.email_entry.delete(0, "end")
+            self.password_entry.delete(0, "end")
+
+            self.master.user_role = user_role
+            self.master.emp_id = self.emp_id
+            self.master.current_store_id = self.store_map[selected_store]
+
+            messagebox.showinfo("Login Success", f"Welcome back, {user_role.capitalize()}!")
+            self.master.reset_frames_after_login()
+>>>>>>> Stashed changes
 
             if user_role == "employee":
                 master.show_frame(screens.emp_view.EmployeeView, emp_id=self.emp_id)
