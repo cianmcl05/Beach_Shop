@@ -1,4 +1,6 @@
+
 USE surfshop;
+
 
 CREATE TABLE Store (
     Store_ID INT PRIMARY KEY AUTO_INCREMENT,
@@ -93,3 +95,23 @@ CREATE TABLE Bonus (
     Current_Bonus_Percentage DECIMAL(10,2) DEFAULT 0.00,
     FOREIGN KEY (EmpID) REFERENCES Employee(ID) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS Summary_Balance (
+    Month INT,
+    Year INT,
+    Opening_Balance DECIMAL(10,2),
+    Net_Profit DECIMAL(10,2),
+    Current_Balance DECIMAL(10,2),
+    PRIMARY KEY (Month, Year)
+);
+ALTER TABLE Withdrawals
+ADD COLUMN OwnerName VARCHAR(255) DEFAULT NULL;
+
+CREATE TABLE Withdrawals (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    Date DATE NOT NULL,
+    Amount DECIMAL(10,2) NOT NULL,
+    StoreID INT,
+    FOREIGN KEY (StoreID) REFERENCES Store(Store_ID) ON DELETE SET NULL
+);
+
