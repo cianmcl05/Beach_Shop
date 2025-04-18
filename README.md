@@ -1,26 +1,92 @@
 # Beach_Shop
 Beach shop finances
 
-USE Surfshop_Demo branch, it is most recent
+---
 
-RUN NEW SCHEMA, SurfShopSchema.sql
+###  STEPS TO RUN APP
 
-To see all features, create 3 different accounts, an employee. manager, and owner.
+- Use the `Surfshop_Demo` branch — it is the most recent.
+- Run the **new schema**: `SurfShopSchema.sql`.
+- To see all features, create **3 different accounts**:  
+  - An employee  
+  - A manager  
+  - An owner  
 
-manager key is "manager"
+- Manager key: `"manager"`  
+- Owner key: `"owner"`
 
-owner key is "owner"
+>  **Before running the app**, make sure to add stores to the database:  
+> Copy and paste this SQL (formatting required for SQL shell):
 
-must add stores to the database schema before running app, simply copy and paste, will have to format:
-
+```sql
 INSERT INTO Store (Location, Store_Name)
 VALUES
     ('Clearwater', 'Clearwater Store'),
     ('St. Petersburg', 'St. Pete Store'),
     ('Siesta Key', 'Siesta Store');
+When logging in, select the store where you want your account to be assigned.
 
-when going to login, make sure you choose the store you want your account to be adding data to
+▶TO START THE APP
+Navigate to app.py and run it.
 
+ABOUT THE APP
+This app serves as:
 
+An employee clock in/out system
 
+A tool to manage:
+
+Expenses
+
+Sales
+
+Profit
+
+Invoices
+
+Merchandise
+
+Payroll
+
+Bonuses based on sales
+
+USER ROLES
+Employees can:
+
+Clock in/out
+
+Input expenses
+
+Submit end-of-day sales
+
+Enter register content
+
+Managers can:
+
+Do everything employees can (except clocking in/out)
+
+View/edit payroll
+
+Manage stores
+
+Generate profit summaries
+
+Manage invoices
+
+Audit employee activity
+
+Owners can:
+
+Do everything managers can
+
+Withdraw money based on net profit
+
+Excludes payroll + merchandise + expense reserves
+
+ACCESS RESTRICTIONS
+Managers can only view current month data.
+
+Owners can view all historical data.
+
+Each store's data is stored individually and reflected across pages.
 

@@ -73,7 +73,8 @@ def clock_in(emp_id, store_id):
                 INSERT INTO Employee_Time (EmpID, ClockIn, ClockOut, StoreID)
                 VALUES (%s, %s, %s, %s)
             """
-            cursor.execute(insert_query, (emp_id, now, now, store_id))  # initially ClockOut = ClockIn
+            # initially ClockOut = ClockIn
+            cursor.execute(insert_query, (emp_id, now, now, store_id))
             connection.commit()
             return cursor.lastrowid
 
@@ -218,7 +219,7 @@ def insert_expense(expense_type, value, payment_method_binary, emp_id=None, stor
 
     try:
         cursor = connection.cursor()
-        now = datetime.now()  # ✅ Full timestamp (date + time)
+        now = datetime.now()
 
         # Calculate tax (e.g., 7%)
         tax = round(value * 0.07, 2)
@@ -733,7 +734,8 @@ def get_employee_weekly_gross_summary(start_date, end_date):
             GROUP BY e.ID
         """
         cursor.execute(query, (start_date, end_date))
-        return cursor.fetchall()  # List of tuples: (Name, Gross, EmpID)
+        # List of tuples: (Name, Gross, EmpID)
+        return cursor.fetchall()
     except Exception as e:
         print("Error getting weekly gross summary:", e)
         return []
@@ -747,7 +749,8 @@ def get_all_employee_names():
         try:
             cursor = connection.cursor()
             cursor.execute("SELECT ID, Name FROM Employee")
-            return cursor.fetchall()  # Returns list of (ID, Name)
+            # Returns list of (ID, Name)
+            return cursor.fetchall()
         finally:
             cursor.close()
             connection.close()

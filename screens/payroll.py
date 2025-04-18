@@ -85,7 +85,7 @@ class PayrollScreen(tk.Frame):
             pay_date_obj = pay_date if isinstance(pay_date, date) else date.fromisoformat(pay_date)
             if self.user_role == "manager" and (
                     pay_date_obj.month != current_month or pay_date_obj.year != current_year):
-                continue  # Manager shouldn't see old months
+                continue
 
             if emp_id_filter and name != selected_emp:
                 continue
@@ -114,7 +114,7 @@ class PayrollScreen(tk.Frame):
     def confirm_add(self, win, emp_name, amount):
         try:
             emp_id = self.emp_map[emp_name]
-            store_id = getattr(self.master, "current_store_id", None)  # ✅ Grab store from login context
+            store_id = getattr(self.master, "current_store_id", None)
             from sql_connection import insert_payroll
             insert_payroll(date.today(), emp_id, float(amount), store_id)
             win.destroy()

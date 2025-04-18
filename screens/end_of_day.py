@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
 import screens.emp_view
-import screens.manager_view  # Assuming you have the manager view
-import screens.owner_view  # Assuming you might need owner view too
+import screens.manager_view
+import screens.owner_view
 import screens.emp_view
 import sql_connection
 
