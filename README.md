@@ -16,7 +16,7 @@ Beach shop finances
 - Owner key: `"owner"`
 
 >  **Before running the app**, make sure to add stores to the database:  
-> Copy and paste this SQL (formatting required for SQL shell):
+> Copy and paste this SQL:
 
 ```sql
 INSERT INTO Store (Location, Store_Name)
@@ -24,12 +24,15 @@ VALUES
     ('Clearwater', 'Clearwater Store'),
     ('St. Petersburg', 'St. Pete Store'),
     ('Siesta Key', 'Siesta Store');
+```
 When logging in, select the store where you want your account to be assigned.
 
-▶TO START THE APP
+TO START THE APP
+
 Navigate to app.py and run it.
 
 ABOUT THE APP
+
 This app serves as:
 
 An employee clock in/out system
