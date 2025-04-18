@@ -4,7 +4,7 @@ import screens.emp_view
 import screens.manager_view
 import screens.owner_view
 import sql_connection
-from datetime import date
+from datetime import datetime
 
 
 class Expenses(tk.Frame):
@@ -21,11 +21,12 @@ class Expenses(tk.Frame):
         self.table_frame = tk.Frame(self, bg="#FFF4A3")
         self.table_frame.pack(pady=10)
 
-        columns = ("ID", "Type", "Date", "Value", "Tax", "Payment Method", "Store")
+        columns = ("ID", "Type", "Date", "Value", "Payment Method", "Store")
+
         self.tree = ttk.Treeview(self.table_frame, columns=columns, show="headings")
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100)
+            self.tree.column(col, width=120)
         self.tree.pack()
         self.tree.bind("<Double-1>", self.edit_selected)
 
@@ -119,7 +120,9 @@ class Expenses(tk.Frame):
         try:
             value = float(value_str)
             method_binary = 0 if payment_method == "Cash" else 1
-            success = sql_connection.insert_expense(expense_type, value, method_binary, self.emp_id, self.store_id)
+            success = sql_connection.insert_expense(
+                expense_type, value, method_binary, self.emp_id, self.store_id
+            )
             if success:
                 self.load_expenses()
                 messagebox.showinfo("Success", "Expense added.")
@@ -155,26 +158,39 @@ class Expenses(tk.Frame):
         if connection:
             try:
                 cursor = connection.cursor()
-                cursor.execute("SELECT ID, Type, Date, Value, Tax, Cash, Credit, StoreID FROM Expenses ORDER BY Date DESC")
+                # Pull store name from Store table via JOIN
+                cursor.execute("""
+                    SELECT e.ID, e.Type, e.Date, e.Value, e.Cash, e.Credit, s.Store_Name
+                    FROM Expenses e
+                    LEFT JOIN Store s ON e.StoreID = s.Store_ID
+                    ORDER BY e.Date DESC
+                """)
                 rows = cursor.fetchall()
                 for row in rows:
-                    method = "Cash" if row[5] > 0 else "Credit"
-                    self.tree.insert("", "end", values=(row[0], row[1], row[2],
-                                                        f"{row[3]:.2f}", f"{row[4]:.2f}", method,
-                                                        str(row[7] or "N/A")))
+                    expense_id, expense_type, date_val, value, cash, credit, store_name = row
+                    method = "Cash" if cash > 0 else "Credit"
+                    formatted_date = date_val.strftime("%Y-%m-%d %H:%M:%S") if isinstance(date_val, datetime) else str(
+                        date_val)
+                    store_display = store_name or "N/A"
+                    self.tree.insert("", "end", values=(
+                        expense_id, expense_type, formatted_date,
+                        f"{value:.2f}", method, store_display
+                    ))
             except Exception as e:
                 print("Error loading expenses:", e)
             finally:
                 cursor.close()
                 connection.close()
 
-        # Summary Section
+        # Updated summary with store name
         if self.store_id:
             summary = sql_connection.get_store_expense_summary(self.store_id)
+            store_name = sql_connection.get_store_name_by_id(self.store_id)
             if summary:
                 total, cash, credit = summary
+                store_label = store_name or f"Store {self.store_id}"
                 summary_text = (
-                    f"Store {self.store_id} Summary — "
+                    f"{store_label} Summary — "
                     f"Total: ${total or 0:.2f} | "
                     f"Cash: ${cash or 0:.2f} | "
                     f"Credit: ${credit or 0:.2f}"
@@ -186,5 +202,4 @@ class Expenses(tk.Frame):
                                                   font=("Helvetica", 11, "bold"),
                                                   bg="#FFF4A3", fg="#333")
                     self.summary_label.pack(pady=(10, 5))
-
 

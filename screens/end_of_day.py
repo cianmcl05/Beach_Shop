@@ -74,7 +74,9 @@ class EndOfDaySalesScreen(tk.Frame):
             return
 
         from sql_connection import insert_end_of_day_sales
-        success = insert_end_of_day_sales(reg, credit, cash_in_envelope, self.emp_id)
+        store_id = getattr(self.master, "current_store_id", None)  # ✅ pull from login context
+
+        success = insert_end_of_day_sales(reg, credit, cash_in_envelope, self.emp_id, store_id)
 
         if success:
             messagebox.showinfo("Sales Recorded", "End of day sales recorded successfully!")
@@ -83,4 +85,5 @@ class EndOfDaySalesScreen(tk.Frame):
             self.cash_in_envelope_entry.delete(0, tk.END)
         else:
             messagebox.showerror("Error", "Failed to save sales record.")
+
 

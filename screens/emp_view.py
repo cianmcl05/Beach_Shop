@@ -64,7 +64,8 @@ class EmployeeView(tk.Frame):
 
     def toggle_clock(self):
         if not self.clocked_in:
-            record_id = sql_connection.clock_in(self.emp_id)
+            store_id = getattr(self.master, "current_store_id", None)
+            record_id = sql_connection.clock_in(self.emp_id, store_id)  # ✅ Include store
             if record_id:
                 self.current_record_id = record_id
                 self.clock_button.config(text="Clock out")

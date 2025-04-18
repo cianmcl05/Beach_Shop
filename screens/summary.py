@@ -53,6 +53,16 @@ class SummaryScreen(tk.Frame):
             messagebox.showerror("Error", "Please select a valid month and year.")
             return
 
+        # Restrict manager to current month only
+        if self.user_role == "manager":
+            now = datetime.now()
+            if month != now.month or year != now.year:
+                messagebox.showwarning(
+                    "Access Denied",
+                    "Managers are only allowed to view the current month's summary."
+                )
+                return
+
         try:
             summary = sql_connection.generate_summary_report(year, month)
 

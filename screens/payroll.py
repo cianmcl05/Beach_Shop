@@ -72,12 +72,26 @@ class PayrollScreen(tk.Frame):
         selected_emp = self.filter_var.get()
         emp_id_filter = self.emp_map[selected_emp] if selected_emp in self.emp_map else None
 
+        today = date.today()
+        current_month = today.month
+        current_year = today.year
+
+        # Get all payrolls
+        all_payrolls = get_all_payroll()
+
         self.tree.delete(*self.tree.get_children())
-        for pid, pay_date, name, amount in get_all_payroll():
-            # If filtering by employee is enabled, only show matching entry
+
+        for pid, pay_date, name, amount in all_payrolls:
+            pay_date_obj = pay_date if isinstance(pay_date, date) else date.fromisoformat(pay_date)
+            if self.user_role == "manager" and (
+                    pay_date_obj.month != current_month or pay_date_obj.year != current_year):
+                continue  # Manager shouldn't see old months
+
             if emp_id_filter and name != selected_emp:
                 continue
             self.tree.insert("", "end", values=(pid, pay_date, name, f"${amount:.2f}"))
+
+
 
     def open_add_window(self):
         win = tk.Toplevel(self)
@@ -100,7 +114,9 @@ class PayrollScreen(tk.Frame):
     def confirm_add(self, win, emp_name, amount):
         try:
             emp_id = self.emp_map[emp_name]
-            insert_payroll(date.today(), emp_id, float(amount))
+            store_id = getattr(self.master, "current_store_id", None)  # ✅ Grab store from login context
+            from sql_connection import insert_payroll
+            insert_payroll(date.today(), emp_id, float(amount), store_id)
             win.destroy()
             self.load_table()
         except Exception as e:

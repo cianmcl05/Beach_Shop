@@ -9,6 +9,7 @@ import screens.merch
 import screens.payroll
 import screens.store_management
 import screens.summary
+import screens.employee_activity
 
 class ManagerView(tk.Frame):
     def __init__(self, master, emp_id=None):
@@ -29,7 +30,9 @@ class ManagerView(tk.Frame):
             ("End of Day Sales", 250, 80),
             ("Bonus", 250, 130),
             ("Invoices", 250, 180),
-            ("Add Expense", 250, 230)
+            ("Add Expense", 250, 230),
+            ("Activity Log", 250, 280),
+
         ]
 
         for text, x, y in buttons:
@@ -60,6 +63,10 @@ class ManagerView(tk.Frame):
             elif text == "Summary":
                 tk.Button(self, text=text, **button_style,
                           command=lambda: master.show_frame(screens.summary.SummaryScreen, user_role="manager")).place(x=x, y=y)
+            elif text == "Activity Log":
+                tk.Button(self, text=text, **button_style,
+                          command=lambda: master.show_frame(screens.employee_activity.EmployeeActivityScreen,
+                                                            user_role="manager")).place(x=x, y=y)
 
         tk.Button(self, text="Log out", font=("Arial", 12, "bold"), width=12, height=1,
                   bg="#B0F2C2", fg="black", relief="ridge",

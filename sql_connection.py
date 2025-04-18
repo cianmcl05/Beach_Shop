@@ -2,6 +2,7 @@ import mysql.connector
 from mysql.connector import Error
 from datetime import datetime, date
 from decimal import Decimal
+from datetime import datetime, timedelta
 
 
 # connects to sql database
@@ -48,7 +49,7 @@ def insert_user(first_name, last_name, phone, email, password, role, store_id):
 
 
 
-def clock_in(emp_id):
+def clock_in(emp_id, store_id):
     connection = connect_db()
     if connection:
         try:
@@ -66,12 +67,15 @@ def clock_in(emp_id):
                 print("Already clocked in today.")
                 return None  # Already clocked in
 
-            # Insert new clock-in record
+            # Insert new clock-in record with StoreID
             now = datetime.now()
-            insert_query = """INSERT INTO Employee_Time (EmpID, ClockIn, ClockOut) VALUES (%s, %s, %s)"""
-            cursor.execute(insert_query, (emp_id, now, now))  # initially ClockOut = ClockIn
+            insert_query = """
+                INSERT INTO Employee_Time (EmpID, ClockIn, ClockOut, StoreID)
+                VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(insert_query, (emp_id, now, now, store_id))  # initially ClockOut = ClockIn
             connection.commit()
-            return cursor.lastrowid  # return the new record's ID
+            return cursor.lastrowid
 
         except Error as e:
             print(f"Clock-in error: {e}")
@@ -79,6 +83,7 @@ def clock_in(emp_id):
             cursor.close()
             connection.close()
     return None
+
 
 def clock_out(record_id):
     connection = connect_db()
@@ -157,7 +162,7 @@ def update_register_amounts(record_id, reg_in, reg_out):
         return False
 
 
-def insert_end_of_day_sales(reg, credit, cash_in_envelope, emp_id):
+def insert_end_of_day_sales(reg, credit, cash_in_envelope, emp_id, store_id):
     connection = connect_db()
     if not connection:
         return False
@@ -165,15 +170,15 @@ def insert_end_of_day_sales(reg, credit, cash_in_envelope, emp_id):
     try:
         cursor = connection.cursor()
 
-        # Check if there's already a row for today
+        # Check if there's already a row for today and store
         today_start = datetime.combine(date.today(), datetime.min.time())
         today_end = datetime.combine(date.today(), datetime.max.time())
 
         select_query = """
             SELECT Date FROM End_of_Day_Sales
-            WHERE Date BETWEEN %s AND %s
+            WHERE Date BETWEEN %s AND %s AND StoreID = %s
         """
-        cursor.execute(select_query, (today_start, today_end))
+        cursor.execute(select_query, (today_start, today_end, store_id))
         existing = cursor.fetchone()
 
         if existing:
@@ -181,17 +186,17 @@ def insert_end_of_day_sales(reg, credit, cash_in_envelope, emp_id):
             update_query = """
                 UPDATE End_of_Day_Sales
                 SET Reg = %s, Credit = %s, Cash_in_Envelope = %s, EmpID = %s
-                WHERE Date BETWEEN %s AND %s
+                WHERE Date BETWEEN %s AND %s AND StoreID = %s
             """
-            cursor.execute(update_query, (reg, credit, cash_in_envelope, emp_id, today_start, today_end))
+            cursor.execute(update_query, (reg, credit, cash_in_envelope, emp_id, today_start, today_end, store_id))
         else:
             # Insert new record
             insert_query = """
-                INSERT INTO End_of_Day_Sales (Date, Reg, Credit, Cash_in_Envelope, EmpID)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO End_of_Day_Sales (Date, Reg, Credit, Cash_in_Envelope, EmpID, StoreID)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """
             now = datetime.now()
-            cursor.execute(insert_query, (now, reg, credit, cash_in_envelope, emp_id))
+            cursor.execute(insert_query, (now, reg, credit, cash_in_envelope, emp_id, store_id))
 
         connection.commit()
         return True
@@ -204,6 +209,8 @@ def insert_end_of_day_sales(reg, credit, cash_in_envelope, emp_id):
         cursor.close()
         connection.close()
 
+
+
 def insert_expense(expense_type, value, payment_method_binary, emp_id=None, store_id=None):
     connection = connect_db()
     if not connection:
@@ -211,9 +218,12 @@ def insert_expense(expense_type, value, payment_method_binary, emp_id=None, stor
 
     try:
         cursor = connection.cursor()
-        today = date.today()
+        now = datetime.now()  # ✅ Full timestamp (date + time)
 
-        # Store actual value in correct payment method
+        # Calculate tax (e.g., 7%)
+        tax = round(value * 0.07, 2)
+
+        # Determine payment method
         cash = value if payment_method_binary == 0 else 0.00
         credit = value if payment_method_binary == 1 else 0.00
 
@@ -221,7 +231,8 @@ def insert_expense(expense_type, value, payment_method_binary, emp_id=None, stor
             INSERT INTO Expenses (Type, Value, Date, EmpID, Tax, Cash, Credit, StoreID)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
-        values = (expense_type, value, today, emp_id, 0.00, cash, credit, store_id)
+        values = (expense_type, value, now, emp_id, tax, cash, credit, store_id)
+
         cursor.execute(insert_query, values)
         connection.commit()
         return True
@@ -233,6 +244,26 @@ def insert_expense(expense_type, value, payment_method_binary, emp_id=None, stor
     finally:
         cursor.close()
         connection.close()
+
+def get_store_name_by_id(store_id):
+    connection = connect_db()
+    if not connection:
+        return None
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT Store_Name FROM Store WHERE Store_ID = %s", (store_id,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+
+    except Exception as e:
+        print(f"Error fetching store name: {e}")
+        return None
+
+    finally:
+        cursor.close()
+        connection.close()
+
 
 
 def update_expense(expense_id, expense_type, value, payment_method_binary):
@@ -620,14 +651,14 @@ def get_all_payroll():
             cursor.close()
             connection.close()
 
-def insert_payroll(pay_date, emp_id, amount):
+def insert_payroll(pay_date, emp_id, amount, store_id):
     connection = connect_db()
     if connection:
         try:
             cursor = connection.cursor()
             cursor.execute(
-                "INSERT INTO Payroll (Date, EmpID, Payroll) VALUES (%s, %s, %s)",
-                (pay_date, emp_id, amount)
+                "INSERT INTO Payroll (Date, EmpID, Payroll, StoreID) VALUES (%s, %s, %s, %s)",
+                (pay_date, emp_id, amount, store_id)
             )
             connection.commit()
         except Exception as e:
@@ -635,6 +666,8 @@ def insert_payroll(pay_date, emp_id, amount):
         finally:
             cursor.close()
             connection.close()
+
+
 def update_payroll(payroll_id, emp_id, amount):
     connection = connect_db()
     if connection:
@@ -1091,4 +1124,191 @@ def get_current_balance():
     finally:
         cursor.close()
         connection.close()
+
+def get_employee_activity_log():
+    connection = connect_db()
+    if not connection:
+        return [], []
+
+    try:
+        cursor = connection.cursor()
+
+        # Clock-in/out with register data
+        clock_query = """
+            SELECT 
+                DAYNAME(ClockIn) AS Day,
+                DATE(ClockIn) AS Date,
+                e.Name AS Employee,
+                ClockIn,
+                ClockOut,
+                Register_In,
+                Register_Out
+            FROM Employee_Time et
+            JOIN Employee e ON et.EmpID = e.ID
+            ORDER BY ClockIn DESC
+        """
+
+        # Daily entry logs (one per day)
+        input_query = """
+            SELECT 
+                eods.Date AS Timestamp,
+                DAYNAME(eods.Date) AS Day,
+                DATE(eods.Date) AS Date,
+                eods.Reg - eods.Credit AS Cash,
+                eods.Credit AS Credit,
+                ex.Type AS ExpenseType,
+                ex.Value AS ExpenseValue,
+                e.Name AS PayrollName,
+                pr.Payroll AS PayrollAmount
+            FROM End_of_Day_Sales eods
+            LEFT JOIN Expenses ex ON DATE(eods.Date) = ex.Date
+            LEFT JOIN Payroll pr ON DATE(eods.Date) = pr.Date
+            LEFT JOIN Employee e ON pr.EmpID = e.ID
+            ORDER BY eods.Date DESC
+        """
+
+        cursor.execute(clock_query)
+        clock_data = cursor.fetchall()
+
+        cursor.execute(input_query)
+        input_data = cursor.fetchall()
+
+        return clock_data, input_data
+
+    except Exception as e:
+        print("Error fetching employee activity log:", e)
+        return [], []
+
+    finally:
+        cursor.close()
+        connection.close()
+
+def get_employee_activity_log_filtered(emp_name_filter="All", week_filter="All", user_role="manager"):
+    connection = connect_db()
+    if not connection:
+        return [], [], [], []
+
+    try:
+        cursor = connection.cursor()
+
+        # Parse week range if applicable
+        week_start = None
+        week_end = None
+        if week_filter not in ["All", "", None]:
+            parts = week_filter.split("to")
+            if len(parts) == 2:
+                week_start = datetime.strptime(parts[0].strip(), "%Y-%m-%d").strftime("%Y-%m-%d")
+                week_end = datetime.strptime(parts[1].strip(), "%Y-%m-%d").strftime("%Y-%m-%d")
+
+        # Restrict to current month for manager role
+        if user_role == "manager":
+            now = datetime.now()
+            first_day = now.replace(day=1).strftime("%Y-%m-%d")
+            last_day = (now.replace(month=now.month % 12 + 1, day=1) - timedelta(days=1)).strftime("%Y-%m-%d")
+            if not week_start or not week_end:
+                week_start, week_end = first_day, last_day
+
+        # CLOCK LOG QUERY
+        clock_query = """
+            SELECT 
+                DAYNAME(et.ClockIn) AS Day,
+                DATE(et.ClockIn) AS Date,
+                e.Name AS Employee,
+                s.Store_Name AS Store,
+                et.ClockIn,
+                et.ClockOut,
+                et.Register_In,
+                et.Register_Out
+            FROM Employee_Time et
+            JOIN Employee e ON et.EmpID = e.ID
+            LEFT JOIN Store s ON et.StoreID = s.Store_ID
+        """
+        clock_filters = []
+        clock_params = []
+
+        if emp_name_filter not in ["All", "", None]:
+            clock_filters.append("e.Name = %s")
+            clock_params.append(emp_name_filter)
+
+        if week_start and week_end:
+            clock_filters.append("DATE(et.ClockIn) BETWEEN %s AND %s")
+            clock_params.extend([week_start, week_end])
+
+        if clock_filters:
+            clock_query += " WHERE " + " AND ".join(clock_filters)
+        clock_query += " ORDER BY et.ClockIn DESC"
+        cursor.execute(clock_query, tuple(clock_params))
+        clock_data = cursor.fetchall()
+
+        # INPUT LOG QUERY
+        input_query = """
+            SELECT 
+                COALESCE(eods.Date, pr.Date, ex.Date) AS Timestamp,
+                DAYNAME(COALESCE(eods.Date, pr.Date, ex.Date)) AS Day,
+                COALESCE(eods.Date, pr.Date, ex.Date) AS Date,
+                e.Name AS Employee,
+                COALESCE(s.Store_Name, s2.Store_Name, s3.Store_Name) AS Store,
+                IFNULL(eods.Reg - eods.Credit, 0) AS Cash,
+                IFNULL(eods.Credit, 0) AS Credit,
+                ex.Type AS ExpenseType,
+                ex.Value AS ExpenseValue,
+                e.Name AS PayrollName,
+                pr.Payroll AS PayrollAmount
+            FROM Employee e
+            LEFT JOIN End_of_Day_Sales eods ON eods.EmpID = e.ID
+            LEFT JOIN Store s ON eods.StoreID = s.Store_ID
+            LEFT JOIN Payroll pr ON pr.EmpID = e.ID
+            LEFT JOIN Store s2 ON s2.Store_ID = (
+                SELECT StoreID FROM End_of_Day_Sales 
+                WHERE EmpID = e.ID AND DATE(Date) = DATE(pr.Date) LIMIT 1
+            )
+            LEFT JOIN Expenses ex ON ex.EmpID = e.ID
+            LEFT JOIN Store s3 ON ex.StoreID = s3.Store_ID
+        """
+        input_filters = []
+        input_params = []
+
+        if emp_name_filter not in ["All", "", None]:
+            input_filters.append("e.Name = %s")
+            input_params.append(emp_name_filter)
+
+        if week_start and week_end:
+            input_filters.append("DATE(COALESCE(eods.Date, pr.Date, ex.Date)) BETWEEN %s AND %s")
+            input_params.extend([week_start, week_end])
+
+        if input_filters:
+            input_query += " WHERE " + " AND ".join(input_filters)
+        input_query += " ORDER BY Timestamp DESC"
+        cursor.execute(input_query, tuple(input_params))
+        input_data = cursor.fetchall()
+
+        # Week ranges
+        cursor.execute("SELECT DISTINCT DATE(ClockIn) FROM Employee_Time ORDER BY DATE(ClockIn) DESC")
+        all_dates = sorted(set(row[0] for row in cursor.fetchall()))
+        weeks = []
+        seen = set()
+        for d in all_dates:
+            start = d - timedelta(days=d.weekday())
+            end = start + timedelta(days=6)
+            label = f"{start} to {end}"
+            if label not in seen:
+                weeks.append(label)
+                seen.add(label)
+
+        # Distinct employees
+        cursor.execute("SELECT DISTINCT Name FROM Employee")
+        emp_names = [row[0] for row in cursor.fetchall()]
+
+        return clock_data, input_data, emp_names, weeks
+
+    except Exception as e:
+        print("Error fetching filtered employee activity logs:", e)
+        return [], [], [], []
+
+    finally:
+        cursor.close()
+        connection.close()
+
+
+
 
