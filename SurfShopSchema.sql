@@ -1,3 +1,5 @@
+USE surfshop;
+
 
 CREATE TABLE Store (
     Store_ID INT PRIMARY KEY AUTO_INCREMENT,
@@ -11,10 +13,8 @@ CREATE TABLE Employee (
     Phone VARCHAR(15) NOT NULL,
     Email VARCHAR(255) UNIQUE NOT NULL,
     Role ENUM('employee', 'manager', 'owner') DEFAULT 'employee',
-    Username VARCHAR(255) UNIQUE NOT NULL,
-    Password VARCHAR(255) NOT NULL, -- Store hashed passwords
-    StoreID INT,
-    FOREIGN KEY (StoreID) REFERENCES Store(Store_ID) ON DELETE SET NULL
+
+    Password VARCHAR(255) NOT NULL -- Store hashed passwords
 );
 
 CREATE TABLE Employee_Time (
@@ -58,11 +58,10 @@ CREATE TABLE Payroll (
     ID INT PRIMARY KEY AUTO_INCREMENT,
     Date DATE NOT NULL,
     EmpID INT,
-    Payroll DECIMAL(10,2) NOT NULL,
+    Payroll INT NOT NULL,
     FOREIGN KEY (EmpID) REFERENCES Employee(ID) ON DELETE CASCADE
 );
 
--- Invoice Table
 CREATE TABLE Invoice (
     InvoiceID INT PRIMARY KEY AUTO_INCREMENT,
     InvoiceNumber VARCHAR(255) UNIQUE NOT NULL,
@@ -95,3 +94,38 @@ CREATE TABLE Bonus (
     Current_Bonus_Percentage DECIMAL(10,2) DEFAULT 0.00,
     FOREIGN KEY (EmpID) REFERENCES Employee(ID) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS Summary_Balance (
+    Month INT,
+    Year INT,
+    Opening_Balance DECIMAL(10,2),
+    Net_Profit DECIMAL(10,2),
+    Current_Balance DECIMAL(10,2),
+    PRIMARY KEY (Month, Year)
+);
+ALTER TABLE Withdrawals
+ADD COLUMN OwnerName VARCHAR(255) DEFAULT NULL;
+
+CREATE TABLE Withdrawals (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    Date DATE NOT NULL,
+    Amount DECIMAL(10,2) NOT NULL,
+    StoreID INT,
+    FOREIGN KEY (StoreID) REFERENCES Store(Store_ID) ON DELETE SET NULL
+);
+CREATE TABLE IF NOT EXISTS Employee_Activity_Log (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    EmpID INT,
+    Name VARCHAR(255),
+    Role ENUM('employee', 'manager', 'owner'),
+    Action_Type VARCHAR(100),
+    Description TEXT,
+    Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (EmpID) REFERENCES Employee(ID) ON DELETE SET NULL
+);
+ALTER TABLE Payroll
+ADD COLUMN StoreID INT,
+ADD FOREIGN KEY (StoreID) REFERENCES Store(Store_ID) ON DELETE SET NULL;
+
+ALTER TABLE Expenses
+MODIFY COLUMN Date DATETIME NOT NULL;
