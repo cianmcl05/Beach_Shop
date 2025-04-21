@@ -639,27 +639,61 @@ def get_all_payroll():
         try:
             cursor = connection.cursor()
             query = """
-                SELECT Payroll.ID, Payroll.Date, Employee.Name, Payroll.Payroll
+                SELECT Payroll.ID, Payroll.Date, Employee.Name, Payroll.Payroll, Payroll.Pay_With_Bonus
                 FROM Payroll
                 JOIN Employee ON Payroll.EmpID = Employee.ID
                 ORDER BY Payroll.Date DESC
             """
             cursor.execute(query)
             return cursor.fetchall()
-        except:
+        except Exception as e:
+            print("Get all payroll error:", e)
             return []
         finally:
             cursor.close()
             connection.close()
+
+def update_payroll_with_bonus(payroll_id, emp_id, base_pay, pay_with_bonus):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            query = """
+                UPDATE Payroll
+                SET EmpID = %s, Payroll = %s, Pay_With_Bonus = %s
+                WHERE ID = %s
+            """
+            cursor.execute(query, (emp_id, base_pay, pay_with_bonus, payroll_id))
+            connection.commit()
+        except Exception as e:
+            print("Error updating payroll with bonus:", e)
+        finally:
+            cursor.close()
+            connection.close()
+
+
 
 def insert_payroll(pay_date, emp_id, amount, store_id):
     connection = connect_db()
     if connection:
         try:
             cursor = connection.cursor()
+
+            # Get the most recent bonus for this employee
+            cursor.execute("""
+                SELECT BonusID, Bonus_Amount FROM Bonus 
+                WHERE EmpID = %s 
+                ORDER BY BonusID DESC LIMIT 1
+            """, (emp_id,))
+            result = cursor.fetchone()
+            bonus_id = result[0] if result else None
+            bonus = float(result[1]) if result else 0.00
+
+            pay_with_bonus = amount + bonus
+
             cursor.execute(
-                "INSERT INTO Payroll (Date, EmpID, Payroll, StoreID) VALUES (%s, %s, %s, %s)",
-                (pay_date, emp_id, amount, store_id)
+                "INSERT INTO Payroll (Date, EmpID, Payroll, StoreID, Pay_With_Bonus, BonusID) VALUES (%s, %s, %s, %s, %s, %s)",
+                (pay_date, emp_id, amount, store_id, pay_with_bonus, bonus_id)
             )
             connection.commit()
         except Exception as e:
@@ -772,16 +806,16 @@ def get_all_bonuses():
             connection.close()
     return []
 
-def insert_bonus(emp_id, bonus_amount, sales, gross, bonus_pct):
+def insert_bonus(emp_id, bonus_amount, sales, gross, bonus_pct, bonus_date):
     connection = connect_db()
     if connection:
         try:
             cursor = connection.cursor()
             insert_query = """
-                INSERT INTO Bonus (EmpID, Bonus_Amount, Sales, Gross, Bonus_Percentage, Current_Bonus_Percentage)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO Bonus (EmpID, Bonus_Amount, Sales, Gross, Bonus_Percentage, Current_Bonus_Percentage, CreatedAt)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(insert_query, (emp_id, bonus_amount, sales, gross, bonus_pct, bonus_pct))
+            cursor.execute(insert_query, (emp_id, bonus_amount, sales, gross, bonus_pct, bonus_pct, bonus_date))
             connection.commit()
             print("Bonus inserted successfully.")
         except Exception as e:
@@ -789,6 +823,7 @@ def insert_bonus(emp_id, bonus_amount, sales, gross, bonus_pct):
         finally:
             cursor.close()
             connection.close()
+
 def get_all_bonuses(include_id=False):
     connection = connect_db()
     if connection:
@@ -854,6 +889,28 @@ def get_bonus_history_for_employee(emp_id):
     finally:
         cursor.close()
         connection.close()
+
+def get_latest_bonus_for_employee(emp_id):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT Bonus_Amount FROM Bonus
+                WHERE EmpID = %s
+                ORDER BY CreatedAt DESC
+                LIMIT 1
+            """, (emp_id,))
+            result = cursor.fetchone()
+            return float(result[0]) if result else 0.00
+        except Exception as e:
+            print("Error fetching latest bonus:", e)
+            return 0.00
+        finally:
+            cursor.close()
+            connection.close()
+    return 0.00
+
 
 def get_summary_data(month, year):
     connection = connect_db()

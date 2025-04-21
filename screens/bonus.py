@@ -125,7 +125,12 @@ class Bonus(tk.Frame):
             bonus_amount = round((gross * bonus_pct) / 100 / 5) * 5
             emp_id = self.emp_map.get(emp_name)
 
-            sql_connection.insert_bonus(emp_id, bonus_amount, sales, gross, bonus_pct)
+            # Use current date as the bonus date
+            bonus_date = datetime.now().date()
+
+            # Insert the bonus with the bonus_date included
+            sql_connection.insert_bonus(emp_id, bonus_amount, sales, gross, bonus_pct, bonus_date)
+
             self.tree.set(selected[0], "Bonus Amount", f"${bonus_amount:.2f}")
             self.tree.set(selected[0], "Bonus %", f"{bonus_pct:.2f}%")
             messagebox.showinfo("Saved", f"Bonus for {emp_name} saved.")

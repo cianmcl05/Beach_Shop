@@ -3,7 +3,9 @@ from tkinter import ttk, messagebox
 from datetime import date
 import screens.manager_view
 import screens.owner_view
-from sql_connection import get_all_payroll, insert_payroll, get_all_employees, update_payroll, delete_payroll
+import sql_connection
+from sql_connection import get_all_payroll, insert_payroll, get_all_employees, update_payroll_with_bonus, delete_payroll
+
 
 class PayrollScreen(tk.Frame):
     def __init__(self, master, user_role="manager"):
@@ -11,9 +13,7 @@ class PayrollScreen(tk.Frame):
         self.master = master
         self.user_role = user_role
 
-        # Build a mapping of employee names to IDs for filtering and selection
         self.emp_map = {name: eid for eid, name in get_all_employees()}
-        self.reverse_emp_map = {eid: name for name, eid in self.emp_map.items()}
 
         tk.Label(self, text="Payroll Management", font=("Arial", 16, "bold"), bg="#FFF4A3").pack(pady=10)
 
@@ -32,7 +32,6 @@ class PayrollScreen(tk.Frame):
         tk.Button(self.button_frame, text="Delete Selected", font=("Arial", 12, "bold"), width=15,
                   bg="#F28B82", command=self.delete_selected).pack(side=tk.LEFT, padx=10)
 
-        # Filter Section
         filter_frame = tk.Frame(self, bg="#FFF4A3")
         filter_frame.pack(pady=5)
 
@@ -46,52 +45,48 @@ class PayrollScreen(tk.Frame):
         tk.Button(filter_frame, text="Apply", bg="#E58A2C", font=("Arial", 11, "bold"),
                   command=self.load_table).pack(side=tk.LEFT, padx=5)
 
-        # Table Section
         self.table_frame = tk.Frame(self, bg="#FFF4A3")
         self.table_frame.pack(pady=10, fill="both", expand=True)
 
-        self.columns = ("ID", "Date", "Employee", "Amount")
+        self.columns = ("ID", "Date", "Employee", "Amount", "Pay with Bonus")
         self.tree = ttk.Treeview(self.table_frame, columns=self.columns, show="headings")
         for col in self.columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=120)
         self.tree.pack()
 
-        # Bind double-click to edit
         self.tree.bind("<Double-1>", self.double_click_edit)
 
         self.load_table()
 
     def get_back_command(self):
-        if self.user_role == "owner":
-            return lambda: self.master.show_frame(screens.owner_view.OwnerView)
-        else:
-            return lambda: self.master.show_frame(screens.manager_view.ManagerView)
+        return lambda: self.master.show_frame(
+            screens.owner_view.OwnerView if self.user_role == "owner" else screens.manager_view.ManagerView
+        )
 
     def load_table(self):
         selected_emp = self.filter_var.get()
-        emp_id_filter = self.emp_map[selected_emp] if selected_emp in self.emp_map else None
+        emp_id_filter = self.emp_map.get(selected_emp)
 
         today = date.today()
         current_month = today.month
         current_year = today.year
 
-        # Get all payrolls
         all_payrolls = get_all_payroll()
-
         self.tree.delete(*self.tree.get_children())
 
-        for pid, pay_date, name, amount in all_payrolls:
-            pay_date_obj = pay_date if isinstance(pay_date, date) else date.fromisoformat(pay_date)
-            if self.user_role == "manager" and (
-                    pay_date_obj.month != current_month or pay_date_obj.year != current_year):
-                continue
-
+        for pid, pay_date, name, amount, pay_with_bonus in all_payrolls:
+            if self.user_role == "manager":
+                pay_date_obj = pay_date if isinstance(pay_date, date) else date.fromisoformat(pay_date)
+                if pay_date_obj.month != current_month or pay_date_obj.year != current_year:
+                    continue
             if emp_id_filter and name != selected_emp:
                 continue
-            self.tree.insert("", "end", values=(pid, pay_date, name, f"${amount:.2f}"))
-
-
+            self.tree.insert("", "end", values=(
+                pid, pay_date, name,
+                f"${amount:.2f}",
+                f"${pay_with_bonus:.2f}" if pay_with_bonus is not None else "N/A"
+            ))
 
     def open_add_window(self):
         win = tk.Toplevel(self)
@@ -104,19 +99,26 @@ class PayrollScreen(tk.Frame):
         emp_dropdown.pack()
         emp_dropdown.current(0)
 
-        tk.Label(win, text="Amount:", bg="#FFF4A3").pack(pady=2)
-        amount_entry = tk.Entry(win, font=("Arial", 12))
-        amount_entry.pack()
+        tk.Label(win, text="Hourly Wage ($):", bg="#FFF4A3").pack(pady=2)
+        wage_entry = tk.Entry(win, font=("Arial", 12))
+        wage_entry.pack()
+
+        tk.Label(win, text="Hours Worked:", bg="#FFF4A3").pack(pady=2)
+        hours_entry = tk.Entry(win, font=("Arial", 12))
+        hours_entry.pack()
 
         tk.Button(win, text="Confirm", font=("Arial", 12, "bold"), bg="#E58A2C",
-                  command=lambda: self.confirm_add(win, emp_var.get(), amount_entry.get())).pack(pady=10)
+                  command=lambda: self.confirm_add(win, emp_var.get(), wage_entry.get(), hours_entry.get())
+                  ).pack(pady=10)
 
-    def confirm_add(self, win, emp_name, amount):
+    def confirm_add(self, win, emp_name, wage_str, hours_str):
         try:
             emp_id = self.emp_map[emp_name]
             store_id = getattr(self.master, "current_store_id", None)
-            from sql_connection import insert_payroll
-            insert_payroll(date.today(), emp_id, float(amount), store_id)
+            hourly_wage = float(wage_str)
+            hours = float(hours_str)
+            base_pay = hourly_wage * hours
+            insert_payroll(date.today(), emp_id, base_pay, store_id)
             win.destroy()
             self.load_table()
         except Exception as e:
@@ -134,7 +136,7 @@ class PayrollScreen(tk.Frame):
         self.edit_selected()
 
     def _open_edit_form(self, values):
-        payroll_id, pay_date, emp_name, amount = values
+        payroll_id, pay_date, emp_name, amount, _ = values
         win = tk.Toplevel(self)
         win.title("Edit Payroll")
         win.configure(bg="#FFF4A3")
@@ -145,20 +147,40 @@ class PayrollScreen(tk.Frame):
         emp_dropdown.pack()
         emp_dropdown.set(emp_name)
 
-        tk.Label(win, text="Amount:", bg="#FFF4A3").pack(pady=2)
-        amount_entry = tk.Entry(win, font=("Arial", 12))
-        # Remove the "$" symbol and extra spaces
-        amount_value = amount.replace('$', '').strip()
-        amount_entry.insert(0, amount_value)
-        amount_entry.pack()
+        tk.Label(win, text="Hourly Wage ($):", bg="#FFF4A3").pack(pady=2)
+        wage_entry = tk.Entry(win, font=("Arial", 12))
+        wage_entry.pack()
+
+        tk.Label(win, text="Hours Worked:", bg="#FFF4A3").pack(pady=2)
+        hours_entry = tk.Entry(win, font=("Arial", 12))
+        hours_entry.pack()
+
+        try:
+            raw_amount = float(amount.replace('$', '').strip())
+            default_wage = 15.00
+            est_hours = raw_amount / default_wage
+            wage_entry.insert(0, f"{default_wage:.2f}")
+            hours_entry.insert(0, f"{est_hours:.2f}")
+        except:
+            pass
 
         tk.Button(win, text="Confirm", font=("Arial", 12, "bold"), bg="#E58A2C",
-                  command=lambda: self.confirm_edit(win, payroll_id, emp_var.get(), amount_entry.get())).pack(pady=10)
+                  command=lambda: self.confirm_edit(win, payroll_id, emp_var.get(),
+                                                    wage_entry.get(), hours_entry.get())
+                  ).pack(pady=10)
 
-    def confirm_edit(self, win, payroll_id, emp_name, amount):
+    def confirm_edit(self, win, payroll_id, emp_name, wage_str, hours_str):
         try:
             emp_id = self.emp_map[emp_name]
-            update_payroll(payroll_id, emp_id, float(amount))
+            hourly_wage = float(wage_str)
+            hours = float(hours_str)
+            base_pay = hourly_wage * hours
+
+            # Get the most recent bonus for this employee
+            latest_bonus = sql_connection.get_latest_bonus_for_employee(emp_id)
+            total_with_bonus = base_pay + latest_bonus
+
+            sql_connection.update_payroll_with_bonus(payroll_id, emp_id, base_pay, total_with_bonus)
             win.destroy()
             self.load_table()
         except Exception as e:
