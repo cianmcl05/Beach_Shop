@@ -5,7 +5,7 @@ Beach shop finances
 
 ###  STEPS TO RUN APP
 
-- Use the `main` branch — it is the most recent.
+- Use the `surfshop_demo_3` branch — it is the most recent.
 - Run the **new schema**: `SurfShopSchema.sql`.
 - To see all features, create **3 different accounts**:  
   - An employee  
