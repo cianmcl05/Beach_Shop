@@ -142,3 +142,165 @@ ALTER TABLE Payroll ADD COLUMN Bonus DECIMAL(10,2) DEFAULT 0.00;
 ALTER TABLE Bonus ADD COLUMN Bonus_Date DATE AFTER Bonus_Amount;
 
 ALTER TABLE Bonus ADD COLUMN CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP;
+
+CREATE TRIGGER trg_withdrawals_amount_check_bi
+BEFORE INSERT ON Withdrawals
+FOR EACH ROW
+BEGIN
+  IF NEW.Amount < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Withdrawal amount cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_withdrawals_amount_check_bu
+BEFORE UPDATE ON Withdrawals
+FOR EACH ROW
+BEGIN
+  IF NEW.Amount < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Withdrawal amount cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_payroll_amount_check_bi
+BEFORE INSERT ON Payroll
+FOR EACH ROW
+BEGIN
+  IF NEW.Payroll < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Payroll amount cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_payroll_amount_check_bu
+BEFORE UPDATE ON Payroll
+FOR EACH ROW
+BEGIN
+  IF NEW.Payroll < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Payroll amount cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_expenses_value_check_bi
+BEFORE INSERT ON Expenses
+FOR EACH ROW
+BEGIN
+  IF NEW.Value < 0 OR NEW.Tax < 0 OR NEW.Cash < 0 OR NEW.Credit < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Expense fields (Value, Tax, Cash, Credit) cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_expenses_value_check_bu
+BEFORE UPDATE ON Expenses
+FOR EACH ROW
+BEGIN
+  IF NEW.Value < 0 OR NEW.Tax < 0 OR NEW.Cash < 0 OR NEW.Credit < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Expense fields (Value, Tax, Cash, Credit) cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_eods_check_bi
+BEFORE INSERT ON End_of_Day_Sales
+FOR EACH ROW
+BEGIN
+  IF NEW.Reg < 0 OR NEW.Credit < 0 OR NEW.Cash_in_Envelope < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'EOD Sales (Reg, Credit, Cash in Envelope) must be non-negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_eods_check_bu
+BEFORE UPDATE ON End_of_Day_Sales
+FOR EACH ROW
+BEGIN
+  IF NEW.Reg < 0 OR NEW.Credit < 0 OR NEW.Cash_in_Envelope < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'EOD Sales (Reg, Credit, Cash in Envelope) must be non-negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_merch_value_check_bi
+BEFORE INSERT ON Merchandise
+FOR EACH ROW
+BEGIN
+  IF NEW.Merch_Value < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Merchandise value cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_merch_value_check_bu
+BEFORE UPDATE ON Merchandise
+FOR EACH ROW
+BEGIN
+  IF NEW.Merch_Value < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Merchandise value cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_invoice_amount_check_bi
+BEFORE INSERT ON Invoice
+FOR EACH ROW
+BEGIN
+  IF NEW.Amount < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Invoice amount cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_invoice_amount_check_bu
+BEFORE UPDATE ON Invoice
+FOR EACH ROW
+BEGIN
+  IF NEW.Amount < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Invoice amount cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_clock_times_check_bi
+BEFORE INSERT ON Employee_Time
+FOR EACH ROW
+BEGIN
+  IF NEW.ClockOut <= NEW.ClockIn THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'ClockOut must be after ClockIn';
+  END IF;
+END;
+
+CREATE TRIGGER trg_clock_times_check_bu
+BEFORE UPDATE ON Employee_Time
+FOR EACH ROW
+BEGIN
+  IF NEW.ClockOut <= NEW.ClockIn THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'ClockOut must be after ClockIn';
+  END IF;
+END;
+
+CREATE TRIGGER trg_bonus_check_bi
+BEFORE INSERT ON Bonus
+FOR EACH ROW
+BEGIN
+  IF NEW.Bonus_Amount < 0 OR NEW.Sales < 0 OR NEW.Gross < 0 OR
+     NEW.Bonus_Percentage < 0 OR NEW.Current_Bonus_Percentage < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Bonus fields cannot be negative';
+  END IF;
+END;
+
+CREATE TRIGGER trg_bonus_check_bu
+BEFORE UPDATE ON Bonus
+FOR EACH ROW
+BEGIN
+  IF NEW.Bonus_Amount < 0 OR NEW.Sales < 0 OR NEW.Gross < 0 OR
+     NEW.Bonus_Percentage < 0 OR NEW.Current_Bonus_Percentage < 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Bonus fields cannot be negative';
+  END IF;
+END;

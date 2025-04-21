@@ -49,6 +49,8 @@ def insert_user(first_name, last_name, phone, email, password, role, store_id):
 
 
 
+from datetime import datetime, timedelta
+
 def clock_in(emp_id, store_id):
     connection = connect_db()
     if connection:
@@ -67,14 +69,14 @@ def clock_in(emp_id, store_id):
                 print("Already clocked in today.")
                 return None  # Already clocked in
 
-            # Insert new clock-in record with StoreID
             now = datetime.now()
+            dummy_clockout = now + timedelta(seconds=1)  # Ensure it's greater than ClockIn
+
             insert_query = """
                 INSERT INTO Employee_Time (EmpID, ClockIn, ClockOut, StoreID)
                 VALUES (%s, %s, %s, %s)
             """
-            # initially ClockOut = ClockIn
-            cursor.execute(insert_query, (emp_id, now, now, store_id))
+            cursor.execute(insert_query, (emp_id, now, dummy_clockout, store_id))
             connection.commit()
             return cursor.lastrowid
 
@@ -84,6 +86,7 @@ def clock_in(emp_id, store_id):
             cursor.close()
             connection.close()
     return None
+
 
 
 def clock_out(record_id):
