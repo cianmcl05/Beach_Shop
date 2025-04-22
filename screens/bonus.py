@@ -71,8 +71,8 @@ class Bonus(tk.Frame):
         tk.Button(filter_frame, text="Apply Filter", font=("Helvetica", 12), bg="#A4E4A0",
                   command=self.apply_filter).pack(side="left", padx=10)
 
-        tk.Button(self, text="View Bonus History", font=("Helvetica", 12, "bold"), width=18, height=1,
-                  bg="#D8D5F2", command=self.view_bonus_history).pack(pady=5)
+        #tk.Button(self, text="View Bonus History", font=("Helvetica", 12, "bold"), width=18, height=1,
+                  #bg="#D8D5F2", command=self.view_bonus_history).pack(pady=5)
 
     def auto_generate_weekly_gross(self):
         self.tree.delete(*self.tree.get_children())

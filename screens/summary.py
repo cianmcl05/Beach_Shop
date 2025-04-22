@@ -32,18 +32,25 @@ class SummaryScreen(tk.Frame):
         self.year_dropdown.grid(row=0, column=3, padx=5)
         self.year_dropdown.set(str(datetime.now().year))
 
-        tk.Button(self.filter_frame, text="Generate Summary", font=("Arial", 12, "bold"),
-                  bg="#A4E4A0", command=self.generate_summary).grid(row=0, column=4, padx=10)
+        # Store dropdown
+        tk.Label(self.filter_frame, text="Store:", font=("Arial", 12), bg="#FFF4A3").grid(row=0, column=4, padx=5)
+        self.store_var = tk.StringVar()
+        store_options = ["All"] + [name for _, name in sql_connection.get_all_stores()]
+        self.store_dropdown = ttk.Combobox(self.filter_frame, textvariable=self.store_var, state="readonly",
+                                           values=store_options, width=20, font=("Arial", 12))
+        self.store_dropdown.grid(row=0, column=5, padx=5)
+        self.store_dropdown.set("All")
 
-        self.result_box = tk.Text(self, width=60, height=15, font=("Courier New", 12), bg="#FFFFE0")
+        tk.Button(self.filter_frame, text="Generate Summary", font=("Arial", 12, "bold"),
+                  bg="#A4E4A0", command=self.generate_summary).grid(row=0, column=6, padx=10)
+
+        self.result_box = tk.Text(self, width=70, height=15, font=("Courier New", 12), bg="#FFFFE0")
         self.result_box.pack(pady=15)
 
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack()
-
         tk.Button(button_frame, text="Back", font=("Arial", 12, "bold"), width=12,
-                  bg="#B0F2C2", fg="black", relief="ridge",
-                  command=self.go_back).pack(pady=10)
+                  bg="#B0F2C2", command=self.go_back).pack(pady=10)
 
     def generate_summary(self):
         try:
@@ -53,36 +60,35 @@ class SummaryScreen(tk.Frame):
             messagebox.showerror("Error", "Please select a valid month and year.")
             return
 
-        # Restrict manager to current month only
         if self.user_role == "manager":
             now = datetime.now()
             if month != now.month or year != now.year:
-                messagebox.showwarning(
-                    "Access Denied",
-                    "Managers are only allowed to view the current month's summary."
-                )
+                messagebox.showwarning("Access Denied", "Managers can only view the current month's summary.")
                 return
 
-        try:
-            summary = sql_connection.generate_summary_report(year, month)
+        selected_store = self.store_var.get()
+        store_id = None
+        if selected_store != "All":
+            store_id = sql_connection.get_store_id_by_name(selected_store)
 
-            display_text = (
-                f"Summary for {month:02}-{year}:\n\n"
-                f"{'Net Profit:':<25}${summary['net_profit']:.2f}\n"
-                f"{'Current Balance:':<25}${summary['current_balance']:.2f}\n"
-                f"{'Withdrawals:':<25}${summary['withdrawals']:.2f}\n"
-                f"{'Actual Cash:':<25}${summary['actual_cash']:.2f}\n"
-                f"{'Actual Credit:':<25}${summary['actual_credit']:.2f}\n"
-                f"{'Actual Total:':<25}${summary['actual_total']:.2f}\n"
-                f"{'Sales Tax Report:':<25}${summary['sales_tax']:.2f}"
-            )
+        summary = sql_connection.generate_summary_report(year, month, store_id)
+        if not summary:
+            messagebox.showerror("Error", "No data found for the selected period.")
+            return
 
-            self.result_box.delete("1.0", tk.END)
-            self.result_box.insert(tk.END, display_text)
+        display_text = (
+            f"Summary for {month:02}-{year} ({selected_store}):\n\n"
+            f"{'Net Profit:':<25}${summary['net_profit']:.2f}\n"
+            f"{'Current Balance:':<25}${summary['current_balance']:.2f}\n"
+            f"{'Withdrawals:':<25}${summary['withdrawals']:.2f}\n"
+            f"{'Actual Cash:':<25}${summary['actual_cash']:.2f}\n"
+            f"{'Actual Credit:':<25}${summary['actual_credit']:.2f}\n"
+            f"{'Actual Total:':<25}${summary['actual_total']:.2f}\n"
+            f"{'Sales Tax Report:':<25}${summary['sales_tax']:.2f}"
+        )
 
-        except Exception as e:
-            print("Summary error:", e)
-            messagebox.showerror("Error", "Failed to generate summary.")
+        self.result_box.delete("1.0", tk.END)
+        self.result_box.insert(tk.END, display_text)
 
     def go_back(self):
         if self.user_role == "manager":

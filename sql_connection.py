@@ -915,7 +915,10 @@ def get_latest_bonus_for_employee(emp_id):
     return 0.00
 
 
-def get_summary_data(month, year):
+from decimal import Decimal
+from datetime import date
+
+def get_summary_data(month, year, store_id=None):
     connection = connect_db()
     if not connection:
         return None
@@ -923,14 +926,10 @@ def get_summary_data(month, year):
     try:
         cursor = connection.cursor()
 
-        # Set date range for the given month
         start_date = date(year, month, 1)
-        if month == 12:
-            end_date = date(year + 1, 1, 1)
-        else:
-            end_date = date(year, month + 1, 1)
+        end_date = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
 
-        # Opening Balance: pull from previous month net profit if exists
+        # Get opening balance from previous month
         cursor.execute("""
             SELECT Net_Profit FROM Summary_Balance 
             WHERE Month = %s AND Year = %s
@@ -938,64 +937,60 @@ def get_summary_data(month, year):
         opening_balance = cursor.fetchone()
         opening_balance = opening_balance[0] if opening_balance else Decimal("0.00")
 
-        # Total End of Day Reg (Cash), Credit
-        cursor.execute("""
-            SELECT COALESCE(SUM(Reg), 0), COALESCE(SUM(Credit), 0)
+        def build_query(base):
+            return base + (" AND StoreID = %s" if store_id else "")
+
+        def build_params():
+            return (start_date, end_date, store_id) if store_id else (start_date, end_date)
+
+
+        cursor.execute(build_query("""
+            SELECT COALESCE(SUM(Cash_in_Envelope), 0), COALESCE(SUM(Credit), 0)
             FROM End_of_Day_Sales
             WHERE Date >= %s AND Date < %s
-        """, (start_date, end_date))
+        """), build_params())
         total_cash, total_credit = cursor.fetchone()
 
-        # Total Expenses
-        cursor.execute("""
+        # Expenses
+        cursor.execute(build_query("""
             SELECT COALESCE(SUM(Value), 0)
             FROM Expenses
             WHERE Date >= %s AND Date < %s
-        """, (start_date, end_date))
+        """), build_params())
         total_expenses = cursor.fetchone()[0]
 
-        # Total Merchandise
-        cursor.execute("""
+        # Merchandise
+        cursor.execute(build_query("""
             SELECT COALESCE(SUM(Merch_Value), 0)
             FROM Merchandise
             WHERE Purchase_Date >= %s AND Purchase_Date < %s
-        """, (start_date, end_date))
+        """), build_params())
         total_merch = cursor.fetchone()[0]
 
-        # Total Payroll
-        cursor.execute("""
+        # Payroll
+        cursor.execute(build_query("""
             SELECT COALESCE(SUM(Payroll), 0)
             FROM Payroll
             WHERE Date >= %s AND Date < %s
-        """, (start_date, end_date))
+        """), build_params())
         total_payroll = cursor.fetchone()[0]
 
-        # Total Withdrawals
-        cursor.execute("""
+        # Withdrawals
+        cursor.execute(build_query("""
             SELECT COALESCE(SUM(Amount), 0)
             FROM Withdrawals
             WHERE Date >= %s AND Date < %s
-        """, (start_date, end_date))
+        """), build_params())
         total_withdrawals = cursor.fetchone()[0]
 
-        # Net Profit = sales - expenses - merch - payroll
-        net_profit = total_cash + total_credit - total_expenses - total_merch - total_payroll
 
-        # Current Balance = opening + net - withdrawals
+        total_sales = total_cash + total_credit
+        net_profit = total_sales - total_expenses - total_merch - total_payroll
         current_balance = opening_balance + net_profit - total_withdrawals
-
-        # Actual Cash = cash - payroll
         actual_cash = total_cash - total_payroll
-
-        # Actual Credit = credit - merch - expenses
         actual_credit = total_credit - total_merch - total_expenses
-
-        # Actual Total = cash + credit
         actual_total = actual_cash + actual_credit
-
-        # Sales tax report: credit + (cash * 0.2), rounded to nearest 5
-        sales_tax = total_credit + (total_cash * Decimal("0.2"))
-        sales_tax = round(sales_tax / Decimal("5.0")) * Decimal("5.0")
+        sales_tax = round((total_credit + (total_cash * Decimal("0.2"))) / Decimal("5.0")) * Decimal("5.0")
 
         return {
             "net_profit": net_profit,
@@ -1015,12 +1010,30 @@ def get_summary_data(month, year):
         cursor.close()
         connection.close()
 
-def generate_summary_report(year, month):
-    summary = get_summary_data(month, year)
+#THIS IS FOR END OF DAY SALES
+def check_existing_end_of_day_sale(store_id, date_obj):
+    connection = connect_db()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT COUNT(*) FROM End_of_Day_Sales 
+                WHERE DATE(Date) = %s AND StoreID = %s
+            """, (date_obj, store_id))
+            count = cursor.fetchone()[0]
+            return count > 0
+        except Exception as e:
+            print("Check EOD Sale Error:", e)
+        finally:
+            cursor.close()
+            connection.close()
+    return False
+
+def generate_summary_report(year, month, store_id=None):
+    summary = get_summary_data(month, year, store_id)
     if not summary:
         return None
 
-    # Save result to persistent summary table
     try:
         connection = connect_db()
         if not connection:
@@ -1028,15 +1041,14 @@ def generate_summary_report(year, month):
 
         cursor = connection.cursor()
 
-        insert_query = """
+        cursor.execute("""
             INSERT INTO Summary_Balance (Month, Year, Opening_Balance, Net_Profit, Current_Balance)
             VALUES (%s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE 
                 Opening_Balance = VALUES(Opening_Balance),
                 Net_Profit = VALUES(Net_Profit),
                 Current_Balance = VALUES(Current_Balance)
-        """
-        cursor.execute(insert_query, (
+        """, (
             month,
             year,
             summary["opening_balance"],
@@ -1053,8 +1065,22 @@ def generate_summary_report(year, month):
         cursor.close()
         connection.close()
 
-from datetime import datetime
-from decimal import Decimal
+def get_store_id_by_name(store_name):
+    connection = connect_db()
+    if not connection:
+        return None
+    try:
+        cursor = connection.cursor()
+        cursor.execute("SELECT Store_ID FROM Store WHERE Store_Name = %s", (store_name,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except Exception as e:
+        print("Error fetching store ID:", e)
+        return None
+    finally:
+        cursor.close()
+        connection.close()
+
 
 def insert_withdrawal(amount, owner_name):
     connection = connect_db()

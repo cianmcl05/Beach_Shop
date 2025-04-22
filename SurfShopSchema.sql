@@ -1,6 +1,4 @@
-
 USE surfshop;
-
 
 CREATE TABLE Store (
     Store_ID INT PRIMARY KEY AUTO_INCREMENT,
@@ -142,6 +140,12 @@ ALTER TABLE Payroll ADD COLUMN Bonus DECIMAL(10,2) DEFAULT 0.00;
 ALTER TABLE Bonus ADD COLUMN Bonus_Date DATE AFTER Bonus_Amount;
 
 ALTER TABLE Bonus ADD COLUMN CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE End_of_Day_Sales
+ADD CONSTRAINT unique_store_date_entry
+UNIQUE (Date, StoreID);
+
+
 
 CREATE TRIGGER trg_withdrawals_amount_check_bi
 BEFORE INSERT ON Withdrawals

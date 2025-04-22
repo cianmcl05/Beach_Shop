@@ -5,7 +5,7 @@ Beach shop finances
 
 ###  STEPS TO RUN APP
 
-- Use the `main` branch — it is the most recent.
+- Use the `surfshop_demo_3` branch — it is the most recent.
 - Run the **new schema**: `SurfShopSchema.sql`.
 - To see all features, create **3 different accounts**:  
   - An employee  
@@ -29,7 +29,11 @@ When logging in, select the store where you want your account to be assigned.
 
 TO START THE APP
 
-Navigate to app.py and run it.
+Navigate to app.py and run it. To connect to your localhost DB, go near the top of `sql_connection`.
+
+`IMPORTANT`: When testing the payroll feature, make sure to navigate to the bonus table and give the employees a bonus percentage based on their sales first. Then, go to payroll and add how many hours they worked and their hourly wage. This will show both their total pay with and without bonus, and you can edit it how you please.
+
+`IMPORTANT`: In the generate summary feature, sales tax may not be accurate. Merchandise costs are taken from credit only. Money that is used to calculate the summary comes from end of day sales, which can only be submitted once per day. If you make a mistake and need to enter in another end of day sale, the program will prompt you by informing you that you are overriding the sales. Test features of summary table by logging end of day sales in different stores via any role, as there is a filter feature included.
 
 ABOUT THE APP
 

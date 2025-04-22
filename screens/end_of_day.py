@@ -68,13 +68,27 @@ class EndOfDaySalesScreen(tk.Frame):
             messagebox.showerror("Invalid Input", "Please enter valid decimal numbers.")
             return
 
-        # Check that Reg == Credit + Cash
         if round(reg, 2) != round(credit + cash_in_envelope, 2):
             messagebox.showerror("Mismatch", "Reg must equal Credit + Cash in Envelope.")
             return
 
-        from sql_connection import insert_end_of_day_sales
-        store_id = getattr(self.master, "current_store_id", None)  # ✅ pull from login context
+        store_id = getattr(self.master, "current_store_id", None)
+        if store_id is None:
+            messagebox.showerror("Error", "No store selected.")
+            return
+
+        from datetime import datetime
+        from sql_connection import check_existing_end_of_day_sale, insert_end_of_day_sales
+
+        # Check for existing entry
+        if check_existing_end_of_day_sale(store_id, datetime.now().date()):
+            overwrite = messagebox.askyesno(
+                "Confirm Overwrite",
+                "An end-of-day sale has already been submitted for this store today.\n"
+                "Submitting again will overwrite the previous one. Continue?"
+            )
+            if not overwrite:
+                return
 
         success = insert_end_of_day_sales(reg, credit, cash_in_envelope, self.emp_id, store_id)
 
@@ -85,5 +99,6 @@ class EndOfDaySalesScreen(tk.Frame):
             self.cash_in_envelope_entry.delete(0, tk.END)
         else:
             messagebox.showerror("Error", "Failed to save sales record.")
+
 
 
