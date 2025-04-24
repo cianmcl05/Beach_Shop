@@ -1,4 +1,6 @@
+
 USE surfshop;
+
 
 CREATE TABLE Store (
     Store_ID INT PRIMARY KEY AUTO_INCREMENT,
@@ -12,7 +14,7 @@ CREATE TABLE Employee (
     Phone VARCHAR(15) NOT NULL,
     Email VARCHAR(255) UNIQUE NOT NULL,
     Role ENUM('employee', 'manager', 'owner') DEFAULT 'employee',
-
+    StoreID INT,
     Password VARCHAR(255) NOT NULL -- Store hashed passwords
 );
 
@@ -102,8 +104,6 @@ CREATE TABLE IF NOT EXISTS Summary_Balance (
     Current_Balance DECIMAL(10,2),
     PRIMARY KEY (Month, Year)
 );
-ALTER TABLE Withdrawals
-ADD COLUMN OwnerName VARCHAR(255) DEFAULT NULL;
 
 CREATE TABLE Withdrawals (
     ID INT PRIMARY KEY AUTO_INCREMENT,
@@ -112,6 +112,9 @@ CREATE TABLE Withdrawals (
     StoreID INT,
     FOREIGN KEY (StoreID) REFERENCES Store(Store_ID) ON DELETE SET NULL
 );
+ALTER TABLE Withdrawals
+ADD COLUMN OwnerName VARCHAR(255) DEFAULT NULL;
+
 CREATE TABLE IF NOT EXISTS Employee_Activity_Log (
     ID INT PRIMARY KEY AUTO_INCREMENT,
     EmpID INT,
@@ -308,3 +311,5 @@ BEGIN
     SET MESSAGE_TEXT = 'Bonus fields cannot be negative';
   END IF;
 END;
+
+
