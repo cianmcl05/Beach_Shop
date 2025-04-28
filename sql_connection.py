@@ -1,3 +1,5 @@
+import sys
+print(sys.version)
 import mysql.connector
 from mysql.connector import Error
 from datetime import datetime, date
@@ -9,12 +11,12 @@ from datetime import datetime, timedelta
 def connect_db():
     """Establish connection to MySQL database."""
     try:
-        # put in correct details
+        # put in correct detailspython --version
         connection = mysql.connector.connect(
             host="localhost",
-            user="beach",
-            password="beach",
-            database="surfshop"
+            user="root",
+            password="Curryforall1",
+            database="beach"
         )
         print("connection")
         return connection

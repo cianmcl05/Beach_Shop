@@ -1,21 +1,73 @@
-import tkinter as tk
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+from PIL import Image, ImageTk
+import os
 import screens.signup
 import screens.login
+import tkinter as tk  # needed for Canvas
 
-
-# basic welcome screen
-class WelcomeScreen(tk.Frame):
+class WelcomeScreen(tb.Frame):
     def __init__(self, master):
-        super().__init__(master, bg="#FFF4A3")
+        super().__init__(master)
 
-        tk.Label(self, text="Welcome", font=("Arial", 20, "bold"), bg="#FFF4A3", fg="black").pack(pady=40)
+        # ✅ Load and set background image
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        image_path = os.path.join(base_dir, "City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg")
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Background image not found at: {image_path}")
 
-        # button for sign up screen
-        tk.Button(self, text="Sign up", font=("Arial", 12, "bold"), width=10, height=1,
-                  bg="#B0F2C2", fg="black", relief="ridge",
-                  command=lambda: master.show_frame(screens.signup.SignUpScreen)).place(x=150, y=180)
+        bg_image = Image.open(image_path)
+        screen_width = master.winfo_screenwidth()
+        screen_height = master.winfo_screenheight()
+        bg_image = bg_image.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        self.bg_image = ImageTk.PhotoImage(bg_image)
 
-        # button for login screen
-        tk.Button(self, text="Login", font=("Arial", 12, "bold"), width=10, height=1,
-                  bg="#EECFA3", fg="black", relief="ridge",
-                  command=lambda: master.show_frame(screens.login.LoginScreen)).place(x=280, y=180)
+        self.bg_label = tb.Label(self, image=self.bg_image)
+        self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # ✅ Create a light rounded frame using Canvas
+        canvas = tk.Canvas(self, width=500, height=300, highlightthickness=0, bg="#f8f9fa")
+        canvas.place(relx=0.5, rely=0.5, anchor="center")
+
+        radius = 30
+        canvas.create_arc((0, 0, radius*2, radius*2), start=90, extent=90, fill="#ffffff", outline="#ffffff")
+        canvas.create_arc((500 - radius*2, 0, 500, radius*2), start=0, extent=90, fill="#ffffff", outline="#ffffff")
+        canvas.create_arc((0, 300 - radius*2, radius*2, 300), start=180, extent=90, fill="#ffffff", outline="#ffffff")
+        canvas.create_arc((500 - radius*2, 300 - radius*2, 500, 300), start=270, extent=90, fill="#ffffff", outline="#ffffff")
+        canvas.create_rectangle((radius, 0, 500 - radius, 300), fill="#ffffff", outline="#ffffff")
+        canvas.create_rectangle((0, radius, 500, 300 - radius), fill="#ffffff", outline="#ffffff")
+
+        # ✅ Content frame on top of canvas
+        content_frame = tb.Frame(self, bootstyle="light")
+        content_frame.place(relx=0.5, rely=0.5, anchor="center", width=500, height=300)
+
+        # ✅ Welcome title
+        tb.Label(
+            content_frame,
+            text="Welcome",
+            font=("Arial", 28, "bold"),
+            bootstyle="primary"
+        ).pack(pady=(30, 40))
+
+        # ✅ Sign Up and Login buttons
+        button_frame = tb.Frame(content_frame)
+        button_frame.pack()
+
+        tb.Button(
+            button_frame,
+            text="Sign Up",
+            bootstyle="success-outline",
+            width=15,
+            padding=10,
+            command=lambda: master.show_frame(screens.signup.SignUpScreen)
+        ).pack(side="left", padx=30)
+
+        tb.Button(
+            button_frame,
+            text="Login",
+            bootstyle="primary-outline",
+            width=15,
+            padding=10,
+            command=lambda: master.show_frame(screens.login.LoginScreen)
+        ).pack(side="left", padx=30)
+
