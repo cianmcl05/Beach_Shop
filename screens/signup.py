@@ -33,10 +33,16 @@ class SignUpScreen(tk.Frame):
         self.form_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         tk.Label(self.form_frame, text="Create Account", font=("Arial", 16, "bold"), bg="#FFF4A3").pack(pady=10)
+
+        # Input fields frame
+        self.input_fields_frame = tk.Frame(self.form_frame, bg="#FFF4A3")
+        self.input_fields_frame.pack(padx=20, pady=5)
+
         self.entries = {}
 
-        role_frame = tk.Frame(self.form_frame, bg="#FFF4A3")
-        role_frame.pack(anchor="w", padx=20, pady=5)
+        # Role frame (row 0)
+        role_frame = tk.Frame(self.input_fields_frame, bg="#FFF4A3")
+        role_frame.grid(row=0, column=0, columnspan=2, pady=5, sticky="w")
 
         tk.Label(role_frame, text="Role:", font=("Arial", 12), bg="#FFF4A3").grid(row=0, column=0, padx=5, pady=5, sticky="e")
         self.role_var = tk.StringVar()
@@ -50,21 +56,28 @@ class SignUpScreen(tk.Frame):
         self.owner_key_label = tk.Label(role_frame, text="Owner Key:", font=("Arial", 12), bg="#FFF4A3")
         self.owner_key_entry = tk.Entry(role_frame, font=("Arial", 12), show="*")
 
-        # Input fields
-        self.create_label_entry("First Name:")
-        self.create_label_entry("Last Name:")
-        self.create_label_entry("Phone Number:")
-        self.create_label_entry("Email:")
-        self.create_label_entry("Password:", show="*")
-        self.create_label_entry("Confirm Password:", show="*")
+        # Input fields (First Name, Last Name, etc.)
+        field_labels = [
+            ("First Name:", None),
+            ("Last Name:", None),
+            ("Phone Number:", None),
+            ("Email:", None),
+            ("Password:", "*"),
+            ("Confirm Password:", "*"),
+        ]
 
-        # Store dropdown
-        store_frame = tk.Frame(self.form_frame, bg="#FFF4A3")
-        store_frame.pack(padx=20, pady=5, anchor="w")
-        tk.Label(store_frame, text="Select Store:", font=("Arial", 12), bg="#FFF4A3").grid(row=0, column=0, padx=5, pady=5)
+        for idx, (label_text, show) in enumerate(field_labels, start=1):
+            tk.Label(self.input_fields_frame, text=label_text, font=("Arial", 12), bg="#FFF4A3").grid(row=idx, column=0, padx=5, pady=5, sticky="e")
+            entry = tk.Entry(self.input_fields_frame, font=("Arial", 12), show=show)
+            entry.grid(row=idx, column=1, padx=5, pady=5, sticky="w")
+            self.entries[label_text] = entry
+
+        # Store dropdown (after input fields)
+        store_label_row = len(field_labels) + 1
+        tk.Label(self.input_fields_frame, text="Select Store:", font=("Arial", 12), bg="#FFF4A3").grid(row=store_label_row, column=0, padx=5, pady=5, sticky="e")
         self.store_var = tk.StringVar()
-        self.store_dropdown = ttk.Combobox(store_frame, textvariable=self.store_var, font=("Arial", 12), state="readonly")
-        self.store_dropdown.grid(row=0, column=1, padx=5, pady=5)
+        self.store_dropdown = ttk.Combobox(self.input_fields_frame, textvariable=self.store_var, font=("Arial", 12), state="readonly")
+        self.store_dropdown.grid(row=store_label_row, column=1, padx=5, pady=5, sticky="w")
 
         stores = sql_connection.get_all_stores()
         self.store_dropdown["values"] = [store[1] for store in stores]
@@ -78,14 +91,6 @@ class SignUpScreen(tk.Frame):
 
         tk.Button(button_frame, text="Back", font=("Arial", 12), bg="#FFD966", command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).pack(side="left", padx=10)
         tk.Button(button_frame, text="Sign Up", font=("Arial", 12), bg="#FFD966", command=self.validate_role_keys).pack(side="left", padx=10)
-
-    def create_label_entry(self, label_text, show=None):
-        frame = tk.Frame(self.form_frame, bg="#FFF4A3")
-        frame.pack(padx=20, pady=5, anchor="w")
-        tk.Label(frame, text=label_text, font=("Arial", 12), bg="#FFF4A3").grid(row=0, column=0, padx=5, pady=5)
-        entry = tk.Entry(frame, font=("Arial", 12), show=show)
-        entry.grid(row=0, column=1, padx=5, pady=5)
-        self.entries[label_text] = entry
 
     def toggle_role_keys(self, event):
         self.manager_key_label.grid_forget()
