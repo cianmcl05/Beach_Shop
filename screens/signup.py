@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from ttkbootstrap import Button
 from PIL import Image, ImageTk
 import screens.welcome
 import sql_connection
@@ -28,35 +29,37 @@ class SignUpScreen(tk.Frame):
         self.bg_label = tk.Label(self, image=self.bg_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        # Form frame (on top of background)
-        self.form_frame = tk.Frame(self, bg="#FFF4A3", bd=2, relief="ridge")
+        # Form Frame (transparent look)
+        self.form_frame = tk.Frame(self, bg="", bd=0)
         self.form_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        tk.Label(self.form_frame, text="Create Account", font=("Arial", 16, "bold"), bg="#FFF4A3").pack(pady=10)
+        # Title
+        title_label = ttk.Label(self.form_frame, text="Create Account", font=("Arial", 18, "bold"))
+        title_label.pack(pady=10)
 
-        # Input fields frame
-        self.input_fields_frame = tk.Frame(self.form_frame, bg="#FFF4A3")
+        self.input_fields_frame = tk.Frame(self.form_frame)
         self.input_fields_frame.pack(padx=20, pady=5)
 
         self.entries = {}
 
-        # Role frame (row 0)
-        role_frame = tk.Frame(self.input_fields_frame, bg="#FFF4A3")
+        # Role dropdown
+        role_frame = tk.Frame(self.input_fields_frame)
         role_frame.grid(row=0, column=0, columnspan=2, pady=5, sticky="w")
 
-        tk.Label(role_frame, text="Role:", font=("Arial", 12), bg="#FFF4A3").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+        ttk.Label(role_frame, text="Role:", font=("Arial", 12)).grid(row=0, column=0, padx=5, pady=5, sticky="e")
         self.role_var = tk.StringVar()
         role_dropdown = ttk.Combobox(role_frame, values=["Employee", "Manager", "Owner"], font=("Arial", 12), textvariable=self.role_var, state="readonly")
         role_dropdown.grid(row=0, column=1, padx=5, pady=5)
         role_dropdown.current(0)
         role_dropdown.bind("<<ComboboxSelected>>", self.toggle_role_keys)
 
-        self.manager_key_label = tk.Label(role_frame, text="Manager Key:", font=("Arial", 12), bg="#FFF4A3")
-        self.manager_key_entry = tk.Entry(role_frame, font=("Arial", 12), show="*")
-        self.owner_key_label = tk.Label(role_frame, text="Owner Key:", font=("Arial", 12), bg="#FFF4A3")
-        self.owner_key_entry = tk.Entry(role_frame, font=("Arial", 12), show="*")
+        # Manager/Owner Key fields
+        self.manager_key_label = ttk.Label(role_frame, text="Manager Key:", font=("Arial", 12))
+        self.manager_key_entry = ttk.Entry(role_frame, font=("Arial", 12))
+        self.owner_key_label = ttk.Label(role_frame, text="Owner Key:", font=("Arial", 12))
+        self.owner_key_entry = ttk.Entry(role_frame, font=("Arial", 12))
 
-        # Input fields (First Name, Last Name, etc.)
+        # Other fields
         field_labels = [
             ("First Name:", None),
             ("Last Name:", None),
@@ -67,14 +70,14 @@ class SignUpScreen(tk.Frame):
         ]
 
         for idx, (label_text, show) in enumerate(field_labels, start=1):
-            tk.Label(self.input_fields_frame, text=label_text, font=("Arial", 12), bg="#FFF4A3").grid(row=idx, column=0, padx=5, pady=5, sticky="e")
-            entry = tk.Entry(self.input_fields_frame, font=("Arial", 12), show=show)
+            ttk.Label(self.input_fields_frame, text=label_text, font=("Arial", 12)).grid(row=idx, column=0, padx=5, pady=5, sticky="e")
+            entry = ttk.Entry(self.input_fields_frame, font=("Arial", 12), show=show)
             entry.grid(row=idx, column=1, padx=5, pady=5, sticky="w")
             self.entries[label_text] = entry
 
-        # Store dropdown (after input fields)
+        # Store dropdown
         store_label_row = len(field_labels) + 1
-        tk.Label(self.input_fields_frame, text="Select Store:", font=("Arial", 12), bg="#FFF4A3").grid(row=store_label_row, column=0, padx=5, pady=5, sticky="e")
+        ttk.Label(self.input_fields_frame, text="Select Store:", font=("Arial", 12)).grid(row=store_label_row, column=0, padx=5, pady=5, sticky="e")
         self.store_var = tk.StringVar()
         self.store_dropdown = ttk.Combobox(self.input_fields_frame, textvariable=self.store_var, font=("Arial", 12), state="readonly")
         self.store_dropdown.grid(row=store_label_row, column=1, padx=5, pady=5, sticky="w")
@@ -85,12 +88,12 @@ class SignUpScreen(tk.Frame):
         if stores:
             self.store_dropdown.current(0)
 
-        # Buttons
-        button_frame = tk.Frame(self.form_frame, bg="#FFF4A3")
+        # Buttons frame
+        button_frame = tk.Frame(self.form_frame)
         button_frame.pack(pady=15)
 
-        tk.Button(button_frame, text="Back", font=("Arial", 12), bg="#FFD966", command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).pack(side="left", padx=10)
-        tk.Button(button_frame, text="Sign Up", font=("Arial", 12), bg="#FFD966", command=self.validate_role_keys).pack(side="left", padx=10)
+        Button(button_frame, text="Back", bootstyle="primary", command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).pack(side="left", padx=10)
+        Button(button_frame, text="Sign Up", bootstyle="primary", command=self.validate_role_keys).pack(side="left", padx=10)
 
     def toggle_role_keys(self, event):
         self.manager_key_label.grid_forget()
@@ -158,6 +161,11 @@ class SignUpScreen(tk.Frame):
         messagebox.showinfo("Sign Up Successful", f"Welcome {role}!")
         self.master.current_store_id = store_id
         self.master.show_frame(screens.welcome.WelcomeScreen)
+
+
+
+
+
 
 
 
