@@ -1,4 +1,6 @@
 import tkinter as tk
+from PIL import Image, ImageTk
+import os
 import screens.welcome
 import screens.end_of_day
 import screens.expenses
@@ -14,65 +16,75 @@ import screens.employee_activity
 
 class OwnerView(tk.Frame):
     def __init__(self, master, emp_id=None):
-        super().__init__(master, bg="#FFF4A3")
+        super().__init__(master)
         self.emp_id = emp_id
 
+        # Load background image (Beach image)
+        image_path = r"C:\Users\zelts\OneDrive\Documents\GitHub\Beach_Shop\City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg"  # Correct path
+
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Background image not found at: {image_path}")
+
+        bg_image = Image.open(image_path)
+        screen_width = master.winfo_screenwidth()
+        screen_height = master.winfo_screenheight()
+
+        # Resize background image to cover the screen
+        bg_image = bg_image.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        self.bg_image = ImageTk.PhotoImage(bg_image)
+
+        # Background label to display the image
+        self.bg_label = tk.Label(self, image=self.bg_image)
+        self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # Title Label
         tk.Label(self, text="Owner View", font=("Arial", 20, "bold"), bg="#D8D5F2", fg="black").pack(pady=10)
 
-        button_style = {"font": ("Arial", 12, "bold"), "width": 15, "height": 2,
+        # Button style
+        button_style = {"font": ("Arial", 12, "bold"), "width": 20, "height": 2,
                         "bg": "#D8D5F2", "fg": "black", "relief": "ridge"}
 
-        buttons = [
-            ("Employees", 50, 80),
-            ("Merchandise", 50, 130),
-            ("Pay", 50, 180),
-            ("Manage Stores", 50, 230),
-            ("Withdraw", 50, 280),
-            ("Summary", 50, 330),
-            ("End of Day Sales", 250, 80),
-            ("Bonus", 250, 130),
-            ("Invoices", 250, 180),
-            ("Add Expense", 250, 230),
-            ("Activity Log", 250, 280),
+        # Create a frame for buttons (with white background to stand out from the image)
+        button_frame = tk.Frame(self, bg="white")
+        button_frame.place(relx=0.5, rely=0.4, anchor="center", width=600, height=400)
 
+        # Inner frame to center buttons
+        inner_frame = tk.Frame(button_frame, bg="white")
+        inner_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        # List of buttons with associated actions
+        buttons = [
+            ("Employees", screens.employee_table.EmployeesScreen),
+            ("Merchandise", screens.merch.MerchandiseInventoryScreen),
+            ("Pay", screens.payroll.PayrollScreen),
+            ("Manage Stores", screens.store_management.StoreManagementScreen),
+            ("Withdraw", screens.withdraw.Withdraw),
+            ("Summary", screens.summary.SummaryScreen),
+            ("End of Day Sales", screens.end_of_day.EndOfDaySalesScreen),
+            ("Bonus", screens.bonus.Bonus),
+            ("Invoices", screens.invoices.InvoicesScreen),
+            ("Add Expense", screens.expenses.Expenses),
+            ("Activity Log", screens.employee_activity.EmployeeActivityScreen),
         ]
 
-        for text, x, y in buttons:
-            if text == "Employees":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.employee_table.EmployeesScreen, user_role="owner")).place(x=x, y=y)
-            elif text == "Merchandise":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.merch.MerchandiseInventoryScreen, user_role="owner")).place(x=x, y=y)
-            elif text == "Invoices":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.invoices.InvoicesScreen, user_role="owner")).place(x=x, y=y)
-            elif text == "End of Day Sales":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.end_of_day.EndOfDaySalesScreen, user_role="owner")).place(x=x, y=y)
-            elif text == "Add Expense":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.expenses.Expenses, user_role="owner", emp_id=self.emp_id)).place(x=x, y=y)
-            elif text == "Pay":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.payroll.PayrollScreen, user_role="owner")).place(x=x, y=y)
-            elif text == "Bonus":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.bonus.Bonus, user_role="owner")).place(x=x, y=y)
-            elif text == "Withdraw":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.withdraw.Withdraw)).place(x=x, y=y)
-            elif text == "Manage Stores":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.store_management.StoreManagementScreen)).place(x=x, y=y)
-            elif text == "Summary":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.summary.SummaryScreen, user_role="owner")).place(x=x, y=y)
-            elif text == "Activity Log":
-                tk.Button(self, text=text, **button_style,
-                          command=lambda: master.show_frame(screens.employee_activity.EmployeeActivityScreen,
-                                                            user_role="owner")).place(x=x, y=y)
+        # Grid layout for buttons
+        row = 0
+        col = 0
+        for text, screen in buttons:
+            button = tk.Button(inner_frame, text=text, **button_style,
+                               command=lambda screen=screen: master.show_frame(screen, user_role="owner"))
+            button.grid(row=row, column=col, padx=10, pady=5, sticky="ew")
 
-        tk.Button(self, text="Log out", font=("Arial", 12, "bold"), width=12, height=1,
-                  bg="#B0F2C2", fg="black", relief="ridge",
-                  command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).place(x=150, y=390)
+            col += 1
+            if col > 1:  # After 2 buttons, move to the next row
+                col = 0
+                row += 1
+
+        # Log out button, placed below the grid of buttons
+        log_out_button = tk.Button(self, text="Log out", font=("Arial", 12, "bold"), width=12, height=1,
+                                   bg="#B0F2C2", fg="black", relief="ridge",
+                                   command=lambda: master.show_frame(screens.welcome.WelcomeScreen))
+        log_out_button.place(relx=0.5, rely=0.8, anchor="center")
+
+
+
