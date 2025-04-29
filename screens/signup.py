@@ -13,30 +13,36 @@ class SignUpScreen(tk.Frame):
         super().__init__(master)
         self.master = master
 
-        # Background image
+        # Background image setup
         base_dir = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(base_dir, "City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg")
 
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Background image not found at: {image_path}")
 
+        self.master.update_idletasks()  # Ensure dimensions are accurate
+        screen_width = self.master.winfo_screenwidth()
+        screen_height = self.master.winfo_screenheight()
+
+        # Resize and display the background image
         bg_image = Image.open(image_path)
-        screen_width = master.winfo_screenwidth()
-        screen_height = master.winfo_screenheight()
         bg_image = bg_image.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
         self.bg_image = ImageTk.PhotoImage(bg_image)
 
-        self.bg_label = tk.Label(self, image=self.bg_image)
-        self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        # Canvas for the background image
+        self.canvas = tk.Canvas(self, width=screen_width, height=screen_height)
+        self.canvas.place(x=0, y=0)
+        self.canvas.create_image(0, 0, image=self.bg_image, anchor="nw")
 
-        # Form Frame (transparent look)
+        # Form frame with transparent background and fixed size
         self.form_frame = tk.Frame(self, bg="", bd=0)
-        self.form_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.form_frame.place(relx=0.5, rely=0.5, anchor="center", width=700, height=500)  # Consistent size
 
-        # Title
+        # Title Label
         title_label = ttk.Label(self.form_frame, text="Create Account", font=("Arial", 18, "bold"))
         title_label.pack(pady=10)
 
+        # Input Fields Frame
         self.input_fields_frame = tk.Frame(self.form_frame)
         self.input_fields_frame.pack(padx=20, pady=5)
 
@@ -161,16 +167,5 @@ class SignUpScreen(tk.Frame):
         messagebox.showinfo("Sign Up Successful", f"Welcome {role}!")
         self.master.current_store_id = store_id
         self.master.show_frame(screens.welcome.WelcomeScreen)
-
-
-
-
-
-
-
-
-
-
-
 
 
