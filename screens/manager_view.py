@@ -14,9 +14,10 @@ from PIL import Image, ImageTk
 import os
 
 class ManagerView(tk.Frame):
-    def __init__(self, master, emp_id=None):
+    def __init__(self, master, emp_id=None, user_role=None):  # ✅ Added user_role
         super().__init__(master)
         self.emp_id = emp_id
+        self.user_role = user_role  # ✅ Store user_role
 
         # Set background image
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -54,7 +55,7 @@ class ManagerView(tk.Frame):
             ("Employees", lambda: master.show_frame(screens.employee_table.EmployeesScreen, user_role="manager")),
             ("Merchandise", lambda: master.show_frame(screens.merch.MerchandiseInventoryScreen, user_role="manager")),
             ("Pay", lambda: master.show_frame(screens.payroll.PayrollScreen, user_role="manager")),
-            ("Manage Stores", lambda: master.show_frame(screens.store_management.StoreManagementScreen)),
+            ("Manage Stores", lambda: master.show_frame(screens.store_management.StoreManagementScreen, user_role=self.user_role)),
             ("Summary", lambda: master.show_frame(screens.summary.SummaryScreen, user_role="manager")),
             ("End of Day Sales", lambda: master.show_frame(screens.end_of_day.EndOfDaySalesScreen, user_role="manager", emp_id=self.emp_id)),
             ("Bonus", lambda: master.show_frame(screens.bonus.Bonus, user_role="manager")),

@@ -1,12 +1,15 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from sql_connection import insert_store, get_full_store_list, update_store, delete_store
-
+import screens.manager_view
+import screens.owner_view
+import screens.emp_view
 
 class StoreManagementScreen(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, user_role):
         super().__init__(master, bg="#FFF4A3")
         self.master = master
+        self.user_role = user_role
 
         tk.Label(self, text="Store Management", font=("Arial", 16, "bold"), bg="#FFF4A3").pack(pady=10)
 

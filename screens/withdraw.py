@@ -5,10 +5,9 @@ import sql_connection
 import screens.owner_view
 
 class Withdraw(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, user_role='owner'):
         super().__init__(master, bg="#FFF4A3")
         self.master = master
-
         # Header
         tk.Label(self, text="Withdrawals", font=("Helvetica", 16, "bold"), bg="#d9d6f2", padx=20, pady=5, relief="raised").pack(pady=10)
 
