@@ -63,7 +63,7 @@ class InvoicesScreen(tk.Frame):
     def open_add_invoice_window(self):
         add_window = tk.Toplevel(self)
         add_window.title("Add Invoice")
-        add_window.configure(bg="#fff7a8")
+        add_window.configure(bg="white")
 
         self.invoice_number_entry = self.create_label_entry(add_window, "Invoice #:")
         self.company_entry = self.create_label_entry(add_window, "Company:")

@@ -21,7 +21,7 @@ class EmployeeView(tk.Frame):
 
         # Load background image and resize it to fit
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        image_path = "C:/Users/zelts/OneDrive/Documents/GitHub/Beach_Shop/City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg"
+        image_path = "screens/City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg"
 
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Background image not found at: {image_path}")

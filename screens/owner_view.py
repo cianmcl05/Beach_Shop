@@ -20,7 +20,8 @@ class OwnerView(tk.Frame):
         self.emp_id = emp_id
 
         # Load background image (Beach image)
-        image_path = r"C:\Users\zelts\OneDrive\Documents\GitHub\Beach_Shop\City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg"  # Correct path
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        image_path = os.path.join(base_dir, "City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg")
 
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Background image not found at: {image_path}")

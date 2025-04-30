@@ -53,7 +53,7 @@ class Withdraw(tk.Frame):
     def open_add_withdraw_window(self):
         add_window = tk.Toplevel(self)
         add_window.title("Withdraw")
-        add_window.configure(bg="#FFF4A3")
+        add_window.configure(bg="white")
 
         tk.Label(add_window, text="Amount:", font=("Helvetica", 12), bg="#FFF4A3").pack(anchor="w", padx=20, pady=5)
         amount_entry = tk.Entry(add_window, font=("Helvetica", 12), width=30)

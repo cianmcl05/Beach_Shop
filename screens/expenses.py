@@ -89,12 +89,13 @@ class Expenses(tk.Frame):
     def _open_expense_form(self, title, confirm_callback, values=None):
         win = tk.Toplevel(self)
         win.title(title)
-        win.configure(bg="#FFF4A3")
+        # set window background to white instead of yellow
+        win.configure(bg="white")
 
         type_entry = self.create_label_entry(win, "Type:")
         value_entry = self.create_label_entry(win, "Value:")
 
-        tk.Label(win, text="Payment Method:", font=("Helvetica", 12), bg="#FFF4A3").pack(anchor="w", padx=20)
+        tk.Label(win, text="Payment Method:", font=("Helvetica", 12), bg="white").pack(anchor="w", padx=20)
         payment_var = tk.StringVar()
         payment_method_combo = ttk.Combobox(win, textvariable=payment_var,
                                             font=("Helvetica", 12), width=28, state="readonly")
@@ -107,14 +108,16 @@ class Expenses(tk.Frame):
             value_entry.insert(0, values[3])
             payment_var.set(values[4])
 
+        btn_color = "#CFCFCF" if title.startswith("Add") else "#F6D860"
+
         def on_confirm():
             if values:
                 confirm_callback(win, values[0], type_entry.get(), value_entry.get(), payment_var.get())
             else:
                 confirm_callback(win, type_entry.get(), value_entry.get(), payment_var.get())
 
-        tk.Button(win, text="Confirm", font=("Helvetica", 12, "bold"), bg="#E58A2C",
-                  command=on_confirm).pack(pady=10)
+        tk.Button(win, text="Confirm", font=("Helvetica", 12, "bold"), bg=btn_color,
+                  width=15, height=1, command=on_confirm).pack(pady=10)
 
     def confirm_add(self, win, expense_type, value_str, payment_method):
         try:
@@ -147,7 +150,7 @@ class Expenses(tk.Frame):
             messagebox.showerror("Error", f"Invalid input: {e}")
 
     def create_label_entry(self, parent, text, show=""):
-        tk.Label(parent, text=text, font=("Helvetica", 12), bg="#FFF4A3").pack(anchor="w", padx=20)
+        tk.Label(parent, text=text, font=("Helvetica", 12), bg="white").pack(anchor="w", padx=20)
         entry = tk.Entry(parent, font=("Helvetica", 12), show=show, width=30)
         entry.pack(anchor="w", padx=20, pady=5)
         return entry
