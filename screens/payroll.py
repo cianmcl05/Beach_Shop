@@ -186,7 +186,7 @@ class PayrollScreen(tk.Frame):
         payroll_id, pay_date, emp_name, amount, _ = values
         win = tk.Toplevel(self)
         win.title("Edit Payroll")
-        win.configure(bg="#FFF4A3")
+        win.configure(bg="white")
 
         tk.Label(win, text="Employee:", bg="#FFF4A3").pack(pady=2)
         emp_var = tk.StringVar()

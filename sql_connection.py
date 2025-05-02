@@ -14,9 +14,9 @@ def connect_db():
         # put in correct detailspython --version
         connection = mysql.connector.connect(
             host="localhost",
-            user="root",
-            password="maria",
-            database="beach"
+            user="beach",
+            password="beach",
+            database="surfshop"
         )
         print("connection")
         return connection

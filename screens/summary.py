@@ -84,7 +84,7 @@ class SummaryScreen(tk.Frame):
             f"{'Actual Cash:':<25}${summary['actual_cash']:.2f}\n"
             f"{'Actual Credit:':<25}${summary['actual_credit']:.2f}\n"
             f"{'Actual Total:':<25}${summary['actual_total']:.2f}\n"
-            f"{'Sales Tax Report:':<25}${summary['sales_tax']:.2f}"
+            #f"{'Sales Tax Report:':<25}${summary['sales_tax']:.2f}"
         )
 
         self.result_box.delete("1.0", tk.END)

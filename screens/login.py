@@ -44,8 +44,8 @@ class LoginScreen(tb.Frame):
         self.password_entry = self.create_label_entry("Password:", show="*")
 
         # Forgot Password
-        tb.Label(self.form_frame, text="Forgot User/Password?", font=("Arial", 10, "italic"),
-                 bootstyle="light", foreground="gray30").pack(anchor="w", padx=20, pady=5)
+        #tb.Label(self.form_frame, text="Forgot User/Password?", font=("Arial", 10, "italic"),
+                 #bootstyle="light", foreground="gray30").pack(anchor="w", padx=20, pady=5)
 
         # Store selection
         tb.Label(self.form_frame, text="Select Store", font=("Arial", 12, "bold"),
