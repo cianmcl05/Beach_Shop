@@ -12,13 +12,15 @@ import screens.payroll
 import screens.withdraw
 import screens.store_management
 import screens.summary
+import sql_connection
 import screens.employee_activity
+
 
 class OwnerView(tk.Frame):
     def __init__(self, master, emp_id=None):
         super().__init__(master)
         self.emp_id = emp_id
-
+        self.store_id = getattr(master, "current_store_id", None)
         # Load background image (Beach image)
         base_dir = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(base_dir, "City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg")
@@ -39,7 +41,7 @@ class OwnerView(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         # Title Label
-        tk.Label(self, text="Owner View", font=("Arial", 20, "bold"), bg="#D8D5F2", fg="black").pack(pady=10)
+        tk.Label(self, text=sql_connection.get_store_name_by_id(self.store_id), font=("Arial", 20, "bold"), bg="#D8D5F2", fg="black").pack(pady=10)
 
         # Button style
         button_style = {"font": ("Arial", 12, "bold"), "width": 20, "height": 2,

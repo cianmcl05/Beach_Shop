@@ -5,6 +5,7 @@ import sql_connection
 import screens.manager_view
 import screens.owner_view
 
+
 class EmployeeActivityScreen(tk.Frame):
     def __init__(self, master, user_role="manager"):
         super().__init__(master, bg="#FFF4A3")

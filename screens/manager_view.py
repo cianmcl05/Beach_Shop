@@ -9,6 +9,7 @@ import screens.merch
 import screens.payroll
 import screens.store_management
 import screens.summary
+import sql_connection
 import screens.employee_activity
 from PIL import Image, ImageTk
 import os
@@ -18,7 +19,7 @@ class ManagerView(tk.Frame):
         super().__init__(master)
         self.emp_id = emp_id
         self.user_role = user_role  # ✅ Store user_role
-
+        self.store_id = getattr(master, "current_store_id", None)
         # Set background image
         base_dir = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(base_dir, "City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg")
@@ -37,7 +38,7 @@ class ManagerView(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         # Title Label
-        tk.Label(self, text="Manager View", font=("Arial", 20, "bold"), bg="#D8D5F2", fg="black").pack(pady=10)
+        tk.Label(self, text=sql_connection.get_store_name_by_id(self.store_id), font=("Arial", 20, "bold"), bg="#D8D5F2", fg="black").pack(pady=10)
 
         # White background button frame
         button_frame = tk.Frame(self, bg="white")

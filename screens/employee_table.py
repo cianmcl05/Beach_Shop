@@ -4,6 +4,7 @@ import screens.manager_view
 import screens.owner_view
 from sql_connection import get_all_employees_with_store, delete_employee, update_employee, get_all_stores
 
+
 class EmployeesScreen(tk.Frame):
     def __init__(self, master, user_role="manager"):
         super().__init__(master, bg="#fff7a8")

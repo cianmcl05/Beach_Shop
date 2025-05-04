@@ -8,11 +8,12 @@ from datetime import datetime
 from PIL import Image, ImageTk
 import os
 
+
 class EmployeeView(tk.Frame):
-    def __init__(self, master, emp_id=None, store_id=None):
+    def __init__(self, master, emp_id=None):
         super().__init__(master)
         self.emp_id = emp_id
-        self.store_id = store_id
+        self.store_id = getattr(master, "current_store_id", None)
         self.clocked_in = False
         self.current_record_id = None
 
@@ -36,7 +37,7 @@ class EmployeeView(tk.Frame):
         self.bg_label = tk.Label(self, image=self.bg_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        tk.Label(self, text="Employee View", font=("Arial", 20, "bold"), bg="#D8D5F2", fg="black").pack(pady=10)
+        tk.Label(self, text=sql_connection.get_store_name_by_id(self.store_id), font=("Arial", 20, "bold"), bg="#D8D5F2", fg="black").pack(pady=10)
 
         button_frame = tk.Frame(self, bg="white")
         button_frame.place(relx=0.5, rely=0.4, anchor="center", width=800, height=500)
