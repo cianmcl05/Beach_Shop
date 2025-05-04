@@ -12,50 +12,70 @@ import screens.payroll
 import screens.withdraw
 import screens.store_management
 import screens.summary
-import sql_connection
 import screens.employee_activity
-
+import sql_connection
 
 class OwnerView(tk.Frame):
+    """
+    Dashboard for store owners. Displays a full-screen background image,
+    current store name, a grid of navigation buttons for various screens,
+    and a logout button.
+    """
     def __init__(self, master, emp_id=None):
         super().__init__(master)
         self.emp_id = emp_id
+        # Get current store ID from the main application context
         self.store_id = getattr(master, "current_store_id", None)
-        # Load background image (Beach image)
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        image_path = os.path.join(base_dir, "City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg")
 
+        # Load and validate background image path
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        image_path = os.path.join(
+            base_dir,
+            "City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg"
+        )
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Background image not found at: {image_path}")
 
+        # Open and resize image to fill entire screen
         bg_image = Image.open(image_path)
-        screen_width = master.winfo_screenwidth()
-        screen_height = master.winfo_screenheight()
-
-        # Resize background image to cover the screen
-        bg_image = bg_image.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
+        screen_w = master.winfo_screenwidth()
+        screen_h = master.winfo_screenheight()
+        bg_image = bg_image.resize((screen_w, screen_h), Image.Resampling.LANCZOS)
         self.bg_image = ImageTk.PhotoImage(bg_image)
 
-        # Background label to display the image
+        # Place the background image behind all other widgets
         self.bg_label = tk.Label(self, image=self.bg_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        # Title Label
-        tk.Label(self, text=sql_connection.get_store_name_by_id(self.store_id), font=("Arial", 20, "bold"), bg="#D8D5F2", fg="black").pack(pady=10)
+        # Display the store name at the top
+        store_name = sql_connection.get_store_name_by_id(self.store_id)
+        tk.Label(
+            self,
+            text=store_name,
+            font=("Arial", 20, "bold"),
+            bg="#D8D5F2",
+            fg="black"
+        ).pack(pady=10)
 
-        # Button style
-        button_style = {"font": ("Arial", 12, "bold"), "width": 20, "height": 2,
-                        "bg": "#D8D5F2", "fg": "black", "relief": "ridge"}
+        # Common style for all navigation buttons
+        button_style = {
+            "font": ("Arial", 12, "bold"),
+            "width": 20,
+            "height": 2,
+            "bg": "#D8D5F2",
+            "fg": "black",
+            "relief": "ridge"
+        }
 
-        # Create a frame for buttons (with white background to stand out from the image)
+        # Container frame with white background for button grid
         button_frame = tk.Frame(self, bg="white")
         button_frame.place(relx=0.5, rely=0.4, anchor="center", width=600, height=400)
 
-        # Inner frame to center buttons
+        # Inner frame to center the grid layout of buttons
         inner_frame = tk.Frame(button_frame, bg="white")
         inner_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        # List of buttons with associated actions
+        # Define (label, FrameClass) pairs for each feature
         buttons = [
             ("Employees", screens.employee_table.EmployeesScreen),
             ("Merchandise", screens.merch.MerchandiseInventoryScreen),
@@ -70,24 +90,30 @@ class OwnerView(tk.Frame):
             ("Activity Log", screens.employee_activity.EmployeeActivityScreen),
         ]
 
-        # Grid layout for buttons
-        row = 0
-        col = 0
-        for text, screen in buttons:
-            button = tk.Button(inner_frame, text=text, **button_style,
-                               command=lambda screen=screen: master.show_frame(screen, user_role="owner"))
-            button.grid(row=row, column=col, padx=10, pady=5, sticky="ew")
-
+        # Place buttons in a two-column grid
+        row, col = 0, 0
+        for text, ScreenClass in buttons:
+            tk.Button(
+                inner_frame,
+                text=text,
+                command=lambda cls=ScreenClass: master.show_frame(cls, user_role="owner"),
+                **button_style
+            ).grid(row=row, column=col, padx=10, pady=5, sticky="ew")
+            # Advance to next grid position
             col += 1
-            if col > 1:  # After 2 buttons, move to the next row
+            if col > 1:
                 col = 0
                 row += 1
 
-        # Log out button, placed below the grid of buttons
-        log_out_button = tk.Button(self, text="Log out", font=("Arial", 12, "bold"), width=12, height=1,
-                                   bg="#B0F2C2", fg="black", relief="ridge",
-                                   command=lambda: master.show_frame(screens.welcome.WelcomeScreen))
-        log_out_button.place(relx=0.5, rely=0.8, anchor="center")
-
-
-
+        # Logout button placed below the white frame
+        tk.Button(
+            self,
+            text="Log out",
+            font=("Arial", 12, "bold"),
+            width=12,
+            height=1,
+            bg="#B0F2C2",
+            fg="black",
+            relief="ridge",
+            command=lambda: master.show_frame(screens.welcome.WelcomeScreen)
+        ).place(relx=0.5, rely=0.8, anchor="center")

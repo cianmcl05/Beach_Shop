@@ -13,26 +13,36 @@ from sql_connection import (
 )
 
 class PayrollScreen(tk.Frame):
+    """
+    Screen to manage payroll entries: view, filter by employee,
+    add new payroll, edit existing entries, and delete records.
+    """
     def __init__(self, master, user_role="manager"):
         super().__init__(master, bg="#FFF4A3")
         self.master = master
         self.user_role = user_role
 
-        # Employee lookup
-        self.emp_map = {name: eid for eid, name in get_all_employees()}
+        # Create a mapping of employee names to their IDs for lookups
+        self.emp_map = { name: eid for eid, name in get_all_employees() }
 
-        # Header
-        tk.Label(self, text="Payroll Management",
-                 font=("Arial", 16, "bold"), bg="#FFF4A3")\
-          .pack(pady=10)
+        # Header label
+        tk.Label(
+            self,
+            text="Payroll Management",
+            font=("Arial", 16, "bold"),
+            bg="#FFF4A3"
+        ).pack(pady=10)
 
-        # Filter Area (remains above table)
+        # Filter area: select employee to filter table
         filter_frame = tk.Frame(self, bg="#FFF4A3")
         filter_frame.pack(pady=5, fill="x", padx=20)
 
-        tk.Label(filter_frame, text="Filter by Employee:",
-                 bg="#FFF4A3", font=("Arial", 11))\
-          .pack(side=tk.LEFT)
+        tk.Label(
+            filter_frame,
+            text="Filter by Employee:",
+            font=("Arial", 11),
+            bg="#FFF4A3"
+        ).pack(side=tk.LEFT)
 
         self.filter_var = tk.StringVar()
         self.filter_dropdown = ttk.Combobox(
@@ -45,12 +55,15 @@ class PayrollScreen(tk.Frame):
         self.filter_dropdown.pack(side=tk.LEFT, padx=5)
         self.filter_dropdown.set("All")
 
-        tk.Button(filter_frame, text="Apply",
-                  bg="#E58A2C", font=("Arial", 11, "bold"),
-                  command=self.load_table)\
-          .pack(side=tk.LEFT, padx=5)
+        tk.Button(
+            filter_frame,
+            text="Apply",
+            font=("Arial", 11, "bold"),
+            bg="#E58A2C",
+            command=self.load_table
+        ).pack(side=tk.LEFT, padx=5)
 
-        # Table
+        # Table area: display payroll records
         self.table_frame = tk.Frame(self, bg="#FFF4A3")
         self.table_frame.pack(pady=10, fill="both", expand=True, padx=20)
 
@@ -61,47 +74,71 @@ class PayrollScreen(tk.Frame):
             show="headings",
             height=15
         )
+        # Configure column headings and widths
         for col in self.columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=120)
         self.tree.pack(fill="both", expand=True)
         self.tree.bind("<Double-1>", self.double_click_edit)
 
-        # Load data
+        # Initially load payroll records
         self.load_table()
 
-        # Buttons below table
+        # Action buttons below the table: Back, Add, Edit, Delete
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack(pady=5)
 
-        tk.Button(button_frame, text="Back",
-                  font=("Arial", 12, "bold"), width=10,
-                  bg="#B0F2C2", command=self.get_back_command())\
-          .pack(side=tk.LEFT, padx=10)
+        tk.Button(
+            button_frame,
+            text="Back",
+            font=("Arial", 12, "bold"),
+            width=10,
+            bg="#B0F2C2",
+            command=self.get_back_command()
+        ).pack(side=tk.LEFT, padx=10)
 
-        tk.Button(button_frame, text="Add Payroll",
-                  font=("Arial", 12, "bold"), width=15,
-                  bg="#EECFA3", command=self.open_add_window)\
-          .pack(side=tk.LEFT, padx=10)
+        tk.Button(
+            button_frame,
+            text="Add Payroll",
+            font=("Arial", 12, "bold"),
+            width=15,
+            bg="#EECFA3",
+            command=self.open_add_window
+        ).pack(side=tk.LEFT, padx=10)
 
-        tk.Button(button_frame, text="Edit Selected",
-                  font=("Arial", 12, "bold"), width=15,
-                  bg="#F6D860", command=self.edit_selected)\
-          .pack(side=tk.LEFT, padx=10)
+        tk.Button(
+            button_frame,
+            text="Edit Selected",
+            font=("Arial", 12, "bold"),
+            width=15,
+            bg="#F6D860",
+            command=self.edit_selected
+        ).pack(side=tk.LEFT, padx=10)
 
-        tk.Button(button_frame, text="Delete Selected",
-                  font=("Arial", 12, "bold"), width=15,
-                  bg="#F28B82", command=self.delete_selected)\
-          .pack(side=tk.LEFT, padx=10)
+        tk.Button(
+            button_frame,
+            text="Delete Selected",
+            font=("Arial", 12, "bold"),
+            width=15,
+            bg="#F28B82",
+            command=self.delete_selected
+        ).pack(side=tk.LEFT, padx=10)
 
     def get_back_command(self):
-        return lambda: self.master.show_frame(
-            screens.owner_view.OwnerView
-            if self.user_role == "owner"
-            else screens.manager_view.ManagerView
-        )
+        """
+        Return a lambda to navigate back based on the user's role.
+        """
+        if self.user_role == "owner":
+            return lambda: self.master.show_frame(screens.owner_view.OwnerView)
+        else:
+            return lambda: self.master.show_frame(screens.manager_view.ManagerView)
 
     def load_table(self):
+        """
+        Fetch and display payroll records. Managers see only the current month;
+        other roles see all.
+        Applies employee filter if set.
+        """
         selected_emp = self.filter_var.get()
         emp_id_filter = self.emp_map.get(selected_emp)
 
@@ -113,36 +150,47 @@ class PayrollScreen(tk.Frame):
         self.tree.delete(*self.tree.get_children())
 
         for pid, pay_date, name, amount, pay_with_bonus in all_payrolls:
+            # Restrict to this month for managers
             if self.user_role == "manager":
                 pay_date_obj = pay_date if isinstance(pay_date, date) else date.fromisoformat(pay_date)
                 if pay_date_obj.month != current_month or pay_date_obj.year != current_year:
                     continue
+            # Apply employee name filter
             if emp_id_filter and name != selected_emp:
                 continue
-            self.tree.insert("", "end", values=(
-                pid,
-                pay_date,
-                name,
-                f"${amount:.2f}",
-                f"${pay_with_bonus:.2f}" if pay_with_bonus is not None else "N/A"
-            ))
+            # Insert formatted row
+            self.tree.insert(
+                "", "end",
+                values=(
+                    pid,
+                    pay_date,
+                    name,
+                    f"${amount:.2f}",
+                    f"${pay_with_bonus:.2f}" if pay_with_bonus is not None else "N/A"
+                )
+            )
 
     def open_add_window(self):
+        """
+        Open a modal window to input new payroll data: employee, wage, hours.
+        """
         win = tk.Toplevel(self)
         win.title("Add Payroll")
         win.configure(bg="white")
 
+        # Employee selection dropdown
         tk.Label(win, text="Employee:", bg="#FFF4A3").pack(pady=2)
         emp_var = tk.StringVar()
         emp_dropdown = ttk.Combobox(
             win,
-            textvariable=emp_var,
             values=list(self.emp_map.keys()),
+            textvariable=emp_var,
             state="readonly"
         )
         emp_dropdown.pack()
         emp_dropdown.current(0)
 
+        # Wage and hours inputs
         tk.Label(win, text="Hourly Wage ($):", bg="#FFF4A3").pack(pady=2)
         wage_entry = tk.Entry(win, font=("Arial", 12))
         wage_entry.pack()
@@ -151,14 +199,25 @@ class PayrollScreen(tk.Frame):
         hours_entry = tk.Entry(win, font=("Arial", 12))
         hours_entry.pack()
 
-        tk.Button(win, text="Confirm",
-                  font=("Arial", 12, "bold"), bg="#E58A2C",
-                  command=lambda: self.confirm_add(
-                      win, emp_var.get(), wage_entry.get(), hours_entry.get()
-                  )
+        # Confirm button to add payroll
+        tk.Button(
+            win,
+            text="Confirm",
+            font=("Arial", 12, "bold"),
+            bg="#E58A2C",
+            command=lambda: self.confirm_add(
+                win,
+                emp_var.get(),
+                wage_entry.get(),
+                hours_entry.get()
+            )
         ).pack(pady=10)
 
     def confirm_add(self, win, emp_name, wage_str, hours_str):
+        """
+        Insert a new payroll record using the provided data.
+        Closes modal and refreshes table on success.
+        """
         try:
             emp_id = self.emp_map[emp_name]
             store_id = getattr(self.master, "current_store_id", None)
@@ -172,6 +231,10 @@ class PayrollScreen(tk.Frame):
             messagebox.showerror("Error", f"Failed to add payroll: {e}")
 
     def edit_selected(self):
+        """
+        Open the edit form for the selected payroll entry.
+        If none selected, show an info message.
+        """
         selected = self.tree.selection()
         if not selected:
             messagebox.showinfo("Edit", "Please select a payroll entry.")
@@ -180,24 +243,29 @@ class PayrollScreen(tk.Frame):
         self._open_edit_form(values)
 
     def double_click_edit(self, event):
+        """
+        Trigger edit on double-click in the table.
+        """
         self.edit_selected()
 
     def _open_edit_form(self, values):
+        """
+        Display a modal pre-filled with payroll data for editing.
+        """
         payroll_id, pay_date, emp_name, amount, _ = values
         win = tk.Toplevel(self)
         win.title("Edit Payroll")
         win.configure(bg="white")
 
         tk.Label(win, text="Employee:", bg="#FFF4A3").pack(pady=2)
-        emp_var = tk.StringVar()
+        emp_var = tk.StringVar(value=emp_name)
         emp_dropdown = ttk.Combobox(
             win,
-            textvariable=emp_var,
             values=list(self.emp_map.keys()),
+            textvariable=emp_var,
             state="readonly"
         )
         emp_dropdown.pack()
-        emp_dropdown.set(emp_name)
 
         tk.Label(win, text="Hourly Wage ($):", bg="#FFF4A3").pack(pady=2)
         wage_entry = tk.Entry(win, font=("Arial", 12))
@@ -207,32 +275,43 @@ class PayrollScreen(tk.Frame):
         hours_entry = tk.Entry(win, font=("Arial", 12))
         hours_entry.pack()
 
+        # Estimate existing hours based on a default wage
         try:
-            raw_amount = float(amount.replace('$', '').strip())
+            raw_amount = float(amount.replace('$', ''))
             default_wage = 15.00
             est_hours = raw_amount / default_wage
             wage_entry.insert(0, f"{default_wage:.2f}")
             hours_entry.insert(0, f"{est_hours:.2f}")
-        except:
+        except Exception:
             pass
 
-        tk.Button(win, text="Confirm",
-                  font=("Arial", 12, "bold"), bg="#E58A2C",
-                  command=lambda: self.confirm_edit(
-                      win, payroll_id, emp_var.get(), wage_entry.get(), hours_entry.get()
-                  )
+        tk.Button(
+            win,
+            text="Confirm",
+            font=("Arial", 12, "bold"),
+            bg="#E58A2C",
+            command=lambda: self.confirm_edit(
+                win,
+                payroll_id,
+                emp_var.get(),
+                wage_entry.get(),
+                hours_entry.get()
+            )
         ).pack(pady=10)
 
     def confirm_edit(self, win, payroll_id, emp_name, wage_str, hours_str):
+        """
+        Update the selected payroll record with new wage/hours,
+        including the latest bonus calculation.
+        """
         try:
             emp_id = self.emp_map[emp_name]
             hourly_wage = float(wage_str)
             hours = float(hours_str)
             base_pay = hourly_wage * hours
-
+            # Fetch latest bonus for this employee
             latest_bonus = sql_connection.get_latest_bonus_for_employee(emp_id) or 0
             total_with_bonus = base_pay + latest_bonus
-
             update_payroll_with_bonus(payroll_id, emp_id, base_pay, total_with_bonus)
             win.destroy()
             self.load_table()
@@ -240,11 +319,13 @@ class PayrollScreen(tk.Frame):
             messagebox.showerror("Error", f"Failed to update payroll: {e}")
 
     def delete_selected(self):
+        """
+        Delete the selected payroll entry after confirmation.
+        """
         selected = self.tree.selection()
         if not selected:
             messagebox.showinfo("Delete", "Please select a payroll entry.")
             return
-
         payroll_id = self.tree.item(selected[0], "values")[0]
         if messagebox.askyesno("Delete", f"Delete payroll ID {payroll_id}?"):
             delete_payroll(payroll_id)

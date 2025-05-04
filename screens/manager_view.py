@@ -15,6 +15,11 @@ from PIL import Image, ImageTk
 import os
 
 class ManagerView(tk.Frame):
+    """
+        Main dashboard for managers. Displays a grid of navigation buttons
+        for managing employees, merchandise, payroll, reports, etc., along
+        with a logout option. Background shows current store name.
+        """
     def __init__(self, master, emp_id=None, user_role=None):  # ✅ Added user_role
         super().__init__(master)
         self.emp_id = emp_id
@@ -42,7 +47,7 @@ class ManagerView(tk.Frame):
 
         # White background button frame
         button_frame = tk.Frame(self, bg="white")
-        button_frame.place(relx=0.5, rely=0.5, anchor="center", width=800, height=500)
+        button_frame.place(relx=0.5, rely=0.5, anchor="center", width=600, height=350)
 
         # Inner frame for grid layout
         inner_frame = tk.Frame(button_frame, bg="white")
@@ -77,4 +82,4 @@ class ManagerView(tk.Frame):
         # Log out button at the bottom center
         tk.Button(self, text="Log out", font=("Arial", 12, "bold"), width=12, height=1,
                   bg="#B0F2C2", fg="black", relief="ridge",
-                  command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).place(relx=0.5, rely=0.75, anchor="center")
+                  command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).place(relx=0.5, rely=0.8, anchor="center")

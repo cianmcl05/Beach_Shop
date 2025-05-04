@@ -6,53 +6,128 @@ import screens.owner_view
 from datetime import datetime
 
 class SummaryScreen(tk.Frame):
+    """
+    Screen to generate and display a monthly summary report.
+    Allows selecting month, year, and store (or all stores),
+    then fetches data and displays key metrics.
+    """
     def __init__(self, master, user_role):
         super().__init__(master, bg="#FFF4A3")
         self.master = master
         self.user_role = user_role
 
-        tk.Label(self, text="Monthly Summary", font=("Arial", 20, "bold"),
-                 bg="#D8D5F2", fg="black", pady=10).pack(pady=(20, 5))
+        # Header label for the summary screen
+        tk.Label(
+            self,
+            text="Monthly Summary",
+            font=("Arial", 20, "bold"),
+            bg="#D8D5F2",
+            fg="black",
+            pady=10
+        ).pack(pady=(20, 5))
 
+        # Frame for filter controls (month, year, store)
         self.filter_frame = tk.Frame(self, bg="#FFF4A3")
         self.filter_frame.pack(pady=10)
 
-        tk.Label(self.filter_frame, text="Select Month:", font=("Arial", 12), bg="#FFF4A3").grid(row=0, column=0, padx=5)
+        # Month selection dropdown
+        tk.Label(
+            self.filter_frame,
+            text="Select Month:",
+            font=("Arial", 12),
+            bg="#FFF4A3"
+        ).grid(row=0, column=0, padx=5)
         self.month_var = tk.StringVar()
-        self.month_dropdown = ttk.Combobox(self.filter_frame, textvariable=self.month_var, state="readonly",
-                                           values=[f"{i:02}" for i in range(1, 13)], width=5, font=("Arial", 12))
+        self.month_dropdown = ttk.Combobox(
+            self.filter_frame,
+            textvariable=self.month_var,
+            state="readonly",
+            values=[f"{i:02}" for i in range(1, 13)],
+            width=5,
+            font=("Arial", 12)
+        )
         self.month_dropdown.grid(row=0, column=1, padx=5)
+        # Default to current month
         self.month_dropdown.current(datetime.now().month - 1)
 
-        tk.Label(self.filter_frame, text="Select Year:", font=("Arial", 12), bg="#FFF4A3").grid(row=0, column=2, padx=5)
+        # Year selection dropdown
+        tk.Label(
+            self.filter_frame,
+            text="Select Year:",
+            font=("Arial", 12),
+            bg="#FFF4A3"
+        ).grid(row=0, column=2, padx=5)
         self.year_var = tk.StringVar()
-        self.year_dropdown = ttk.Combobox(self.filter_frame, textvariable=self.year_var, state="readonly",
-                                          values=[str(y) for y in range(2020, datetime.now().year + 1)],
-                                          width=7, font=("Arial", 12))
+        self.year_dropdown = ttk.Combobox(
+            self.filter_frame,
+            textvariable=self.year_var,
+            state="readonly",
+            values=[str(y) for y in range(2020, datetime.now().year + 1)],
+            width=7,
+            font=("Arial", 12)
+        )
         self.year_dropdown.grid(row=0, column=3, padx=5)
+        # Default to current year
         self.year_dropdown.set(str(datetime.now().year))
 
-        # Store dropdown
-        tk.Label(self.filter_frame, text="Store:", font=("Arial", 12), bg="#FFF4A3").grid(row=0, column=4, padx=5)
+        # Store selection dropdown
+        tk.Label(
+            self.filter_frame,
+            text="Store:",
+            font=("Arial", 12),
+            bg="#FFF4A3"
+        ).grid(row=0, column=4, padx=5)
         self.store_var = tk.StringVar()
         store_options = ["All"] + [name for _, name in sql_connection.get_all_stores()]
-        self.store_dropdown = ttk.Combobox(self.filter_frame, textvariable=self.store_var, state="readonly",
-                                           values=store_options, width=20, font=("Arial", 12))
+        self.store_dropdown = ttk.Combobox(
+            self.filter_frame,
+            textvariable=self.store_var,
+            state="readonly",
+            values=store_options,
+            width=20,
+            font=("Arial", 12)
+        )
         self.store_dropdown.grid(row=0, column=5, padx=5)
+        # Default to All stores
         self.store_dropdown.set("All")
 
-        tk.Button(self.filter_frame, text="Generate Summary", font=("Arial", 12, "bold"),
-                  bg="#A4E4A0", command=self.generate_summary).grid(row=0, column=6, padx=10)
+        # Button to trigger summary generation
+        tk.Button(
+            self.filter_frame,
+            text="Generate Summary",
+            font=("Arial", 12, "bold"),
+            bg="#A4E4A0",
+            command=self.generate_summary
+        ).grid(row=0, column=6, padx=10)
 
-        self.result_box = tk.Text(self, width=70, height=15, font=("Courier New", 12), bg="#FFFFE0")
+        # Text box to display output
+        self.result_box = tk.Text(
+            self,
+            width=70,
+            height=15,
+            font=("Courier New", 12),
+            bg="#FFFFE0"
+        )
         self.result_box.pack(pady=15)
 
+        # Frame for Back button
         button_frame = tk.Frame(self, bg="#FFF4A3")
         button_frame.pack()
-        tk.Button(button_frame, text="Back", font=("Arial", 12, "bold"), width=12,
-                  bg="#B0F2C2", command=self.go_back).pack(pady=10)
+        tk.Button(
+            button_frame,
+            text="Back",
+            font=("Arial", 12, "bold"),
+            width=12,
+            bg="#B0F2C2",
+            command=self.go_back
+        ).pack(pady=10)
 
     def generate_summary(self):
+        """
+        Collect selected filters, validate manager access, retrieve summary data,
+        and display results or error messages.
+        """
+        # Parse month and year selections
         try:
             month = int(self.month_var.get())
             year = int(self.year_var.get())
@@ -60,22 +135,29 @@ class SummaryScreen(tk.Frame):
             messagebox.showerror("Error", "Please select a valid month and year.")
             return
 
+        # Managers restricted to current month only
         if self.user_role == "manager":
             now = datetime.now()
             if month != now.month or year != now.year:
-                messagebox.showwarning("Access Denied", "Managers can only view the current month's summary.")
+                messagebox.showwarning(
+                    "Access Denied",
+                    "Managers can only view the current month's summary."
+                )
                 return
 
+        # Determine store filter
         selected_store = self.store_var.get()
         store_id = None
         if selected_store != "All":
             store_id = sql_connection.get_store_id_by_name(selected_store)
 
+        # Fetch summary report from database
         summary = sql_connection.generate_summary_report(year, month, store_id)
         if not summary:
             messagebox.showerror("Error", "No data found for the selected period.")
             return
 
+        # Format and display the summary metrics
         display_text = (
             f"Summary for {month:02}-{year} ({selected_store}):\n\n"
             f"{'Net Profit:':<25}${summary['net_profit']:.2f}\n"
@@ -84,13 +166,16 @@ class SummaryScreen(tk.Frame):
             f"{'Actual Cash:':<25}${summary['actual_cash']:.2f}\n"
             f"{'Actual Credit:':<25}${summary['actual_credit']:.2f}\n"
             f"{'Actual Total:':<25}${summary['actual_total']:.2f}\n"
-            #f"{'Sales Tax Report:':<25}${summary['sales_tax']:.2f}"
         )
 
+        # Clear previous output and insert new text
         self.result_box.delete("1.0", tk.END)
         self.result_box.insert(tk.END, display_text)
 
     def go_back(self):
+        """
+        Navigate back to the appropriate dashboard based on user_role.
+        """
         if self.user_role == "manager":
             self.master.show_frame(screens.manager_view.ManagerView)
         else:

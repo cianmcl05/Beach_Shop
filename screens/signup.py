@@ -9,104 +9,107 @@ import re
 import os
 
 class SignUpScreen(tk.Frame):
+    # Screen for new user registration with role-based access keys
     def __init__(self, master):
         super().__init__(master)
         self.master = master
 
-        # Background image setup
+        # Load and configure background image
         base_dir = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(base_dir, "City-Highlight--Clearwater-ezgif.com-webp-to-jpg-converter.jpg")
-
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Background image not found at: {image_path}")
 
-        self.master.update_idletasks()  # Ensure dimensions are accurate
+        # Ensure window size is up-to-date
+        self.master.update_idletasks()
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
 
-        # Resize and display the background image
+        # Resize image to fill screen
         bg_image = Image.open(image_path)
         bg_image = bg_image.resize((screen_width, screen_height), Image.Resampling.LANCZOS)
         self.bg_image = ImageTk.PhotoImage(bg_image)
 
-        # Canvas for the background image
+        # Create canvas for background
         self.canvas = tk.Canvas(self, width=screen_width, height=screen_height)
         self.canvas.place(x=0, y=0)
         self.canvas.create_image(0, 0, image=self.bg_image, anchor="nw")
 
-        # Form frame with transparent background and fixed size
+        # Frame to hold the form, centered and fixed size
         self.form_frame = tk.Frame(self, bg="", bd=0)
-        self.form_frame.place(relx=0.5, rely=0.5, anchor="center", width=700, height=500)  # Consistent size
+        self.form_frame.place(relx=0.5, rely=0.5, anchor="center", width=700, height=500)
 
-        # Title Label
+        # Title label
         title_label = ttk.Label(self.form_frame, text="Create Account", font=("Arial", 18, "bold"))
         title_label.pack(pady=10)
 
-        # Input Fields Frame
+        # Container for input fields
         self.input_fields_frame = tk.Frame(self.form_frame)
         self.input_fields_frame.pack(padx=20, pady=5)
 
         self.entries = {}
 
-        # Role dropdown
+        # Role selection and keys
         role_frame = tk.Frame(self.input_fields_frame)
         role_frame.grid(row=0, column=0, columnspan=2, pady=5, sticky="w")
-
         ttk.Label(role_frame, text="Role:", font=("Arial", 12)).grid(row=0, column=0, padx=5, pady=5, sticky="e")
         self.role_var = tk.StringVar()
-        role_dropdown = ttk.Combobox(role_frame, values=["Employee", "Manager", "Owner"], font=("Arial", 12), textvariable=self.role_var, state="readonly")
+        role_dropdown = ttk.Combobox(
+            role_frame,
+            values=["Employee", "Manager", "Owner"],
+            font=("Arial", 12),
+            textvariable=self.role_var,
+            state="readonly"
+        )
         role_dropdown.grid(row=0, column=1, padx=5, pady=5)
         role_dropdown.current(0)
         role_dropdown.bind("<<ComboboxSelected>>", self.toggle_role_keys)
 
-        # Manager/Owner Key fields
+        # Hidden inputs for manager/owner keys
         self.manager_key_label = ttk.Label(role_frame, text="Manager Key:", font=("Arial", 12))
         self.manager_key_entry = ttk.Entry(role_frame, font=("Arial", 12))
         self.owner_key_label = ttk.Label(role_frame, text="Owner Key:", font=("Arial", 12))
         self.owner_key_entry = ttk.Entry(role_frame, font=("Arial", 12))
 
-        # Other fields
+        # Standard user info fields
         field_labels = [
             ("First Name:", None),
             ("Last Name:", None),
             ("Phone Number:", None),
             ("Email:", None),
             ("Password:", "*"),
-            ("Confirm Password:", "*"),
+            ("Confirm Password:", "*")
         ]
-
         for idx, (label_text, show) in enumerate(field_labels, start=1):
             ttk.Label(self.input_fields_frame, text=label_text, font=("Arial", 12)).grid(row=idx, column=0, padx=5, pady=5, sticky="e")
-            entry = ttk.Entry(self.input_fields_frame, font=("Arial", 12), show=show)
+            entry = ttk.Entry(self.input_fields_frame, font=("Arial", 12), show=show if show else "")
             entry.grid(row=idx, column=1, padx=5, pady=5, sticky="w")
             self.entries[label_text] = entry
 
-        # Store dropdown
-        store_label_row = len(field_labels) + 1
-        ttk.Label(self.input_fields_frame, text="Select Store:", font=("Arial", 12)).grid(row=store_label_row, column=0, padx=5, pady=5, sticky="e")
+        # Store selection dropdown
+        store_row = len(field_labels) + 1
+        ttk.Label(self.input_fields_frame, text="Select Store:", font=("Arial", 12)).grid(row=store_row, column=0, padx=5, pady=5, sticky="e")
         self.store_var = tk.StringVar()
         self.store_dropdown = ttk.Combobox(self.input_fields_frame, textvariable=self.store_var, font=("Arial", 12), state="readonly")
-        self.store_dropdown.grid(row=store_label_row, column=1, padx=5, pady=5, sticky="w")
-
+        self.store_dropdown.grid(row=store_row, column=1, padx=5, pady=5, sticky="w")
         stores = sql_connection.get_all_stores()
         self.store_dropdown["values"] = [store[1] for store in stores]
         self.store_map = {store[1]: store[0] for store in stores}
         if stores:
             self.store_dropdown.current(0)
 
-        # Buttons frame
+        # Buttons for navigation and submission
         button_frame = tk.Frame(self.form_frame)
         button_frame.pack(pady=15)
-
         Button(button_frame, text="Back", bootstyle="primary", command=lambda: master.show_frame(screens.welcome.WelcomeScreen)).pack(side="left", padx=10)
         Button(button_frame, text="Sign Up", bootstyle="primary", command=self.validate_role_keys).pack(side="left", padx=10)
 
+    # Show/hide key fields when role changes
     def toggle_role_keys(self, event):
         self.manager_key_label.grid_forget()
         self.manager_key_entry.grid_forget()
         self.owner_key_label.grid_forget()
         self.owner_key_entry.grid_forget()
-
         role = self.role_var.get()
         if role == "Manager":
             self.manager_key_label.grid(row=0, column=2, padx=5, pady=5)
@@ -115,6 +118,7 @@ class SignUpScreen(tk.Frame):
             self.owner_key_label.grid(row=0, column=2, padx=5, pady=5)
             self.owner_key_entry.grid(row=0, column=3, padx=5, pady=5)
 
+    # Verify manager/owner keys before registration
     def validate_role_keys(self):
         role = self.role_var.get()
         if role == "Manager" and self.manager_key_entry.get() != "manager":
@@ -125,15 +129,19 @@ class SignUpScreen(tk.Frame):
             return
         self.register_user()
 
+    # Simple email pattern check
     def valid_email(self, email):
         return re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
+    # Phone must be digits and length 10-15
     def valid_phone(self, phone):
         return phone.isdigit() and 10 <= len(phone) <= 15
 
+    # Password length check
     def valid_password(self, password):
         return len(password) >= 8
 
+    # Collect form data, validate, hash password, and insert user
     def register_user(self):
         first_name = self.entries["First Name:"].get().strip()
         last_name = self.entries["Last Name:"].get().strip()
@@ -144,7 +152,6 @@ class SignUpScreen(tk.Frame):
         role = self.role_var.get()
         store_name = self.store_var.get()
         store_id = self.store_map.get(store_name)
-
         if not store_id:
             messagebox.showerror("Error", "Please select a store.")
             return
@@ -160,12 +167,8 @@ class SignUpScreen(tk.Frame):
         if not self.valid_phone(phone):
             messagebox.showerror("Invalid Phone", "Phone must be 10–15 digits.")
             return
-
         hashed_password = hashlib.sha256(password.encode('utf-8')).hexdigest()
         sql_connection.insert_user(first_name, last_name, phone, email, hashed_password, role, store_id)
-
         messagebox.showinfo("Sign Up Successful", f"Welcome {role}!")
         self.master.current_store_id = store_id
         self.master.show_frame(screens.welcome.WelcomeScreen)
-
-
